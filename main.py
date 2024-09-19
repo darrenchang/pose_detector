@@ -6,9 +6,14 @@ mp_pose = mp.solutions.pose
 
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture(1)
-
-    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+    cap = cv2.VideoCapture(0)
+    pose_options = {
+        "min_detection_confidence": 0.5,
+        "min_tracking_confidence": 0.5,
+        "enable_segmentation": True,
+        "model_complexity": 0,
+    }
+    with mp_pose.Pose(**pose_options) as pose:
         if not cap.isOpened():
             print("Cannot open camera")
             exit()
@@ -25,7 +30,8 @@ if __name__ == "__main__":
                 results.pose_landmarks,
                 mp_pose.POSE_CONNECTIONS,
                 landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
-
+            # mp_drawing.plot_landmarks(
+            #     results.pose_world_landmarks, mp_pose.POSE_CONNECTIONS)
             cv2.imshow('pose', img)
             if cv2.waitKey(5) == ord('q'):
                 break
