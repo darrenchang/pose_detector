@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
@@ -29,11 +30,12 @@ if __name__ == "__main__":
                 img,
                 results.pose_landmarks,
                 mp_pose.POSE_CONNECTIONS,
-                landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
+                landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style(),
+            )
             # mp_drawing.plot_landmarks(
             #     results.pose_world_landmarks, mp_pose.POSE_CONNECTIONS)
-            cv2.imshow('pose', img)
-            if cv2.waitKey(5) == ord('q'):
+            cv2.imshow("pose", img)
+            if cv2.waitKey(5) == ord("q"):
                 break
     cap.release()
     cv2.destroyAllWindows()
