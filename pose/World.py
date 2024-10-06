@@ -11,6 +11,7 @@ class World():
         self.y_limit = [0, 1]
         self.z_limit = [-5, 5]
         self.set_axis_limits()
+        self.dots = []
 
     def set_axis_limits(self):
         self.ax.set_xlim(self.x_limit)
@@ -24,13 +25,19 @@ class World():
 
     def draw_pose_landmarks(self, landmarks: list[dict] = []):
         s = perf_counter()
-        self.ax.cla()
-        self.set_axis_limits()
-        for landmark in landmarks:
+        dots = []
+        for index, landmark in enumerate(landmarks):
             x = landmark.get('x', 0)
             y = landmark.get('y', 0)
-            z = 0
-            self.dots = self.ax.scatter(x, y, z, color='r', s=10)
+            z = landmark.get('z', 0)
+            if len(self.dots) > 0:
+                self.dots[index].remove()
+                self.dots[index] = (self.ax.scatter(x, y, z, color='r', s=10))
+            else:
+                dots.append(self.ax.scatter(x, y, z, color='r', s=10))
+        if len(dots) > 0:
+            self.dots = dots
+
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         print(perf_counter() - s)
