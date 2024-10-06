@@ -18,6 +18,8 @@ class Pose():
 
     def inference(self, im):
         results = self.pose.process(im)
+        if results.pose_landmarks is None:
+            return results
         for i, landmark in enumerate(results.pose_landmarks.landmark):
-            print(i, landmark)
+            print(i, landmark.x, landmark.y, landmark.z, landmark.visibility)
         return results

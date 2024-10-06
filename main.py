@@ -10,23 +10,23 @@ if __name__ == "__main__":
     mp_drawing = mp.solutions.drawing_utils
     mp_drawing_styles = mp.solutions.drawing_styles
     cap = cv2.VideoCapture(0)
-    plt.ion()
-    x = np.linspace(0, 2 * np.pi, 100)
-    y = np.sin(x)
+    # plt.ion()
+    # x = np.linspace(0, 2 * np.pi, 100)
+    # y = np.sin(x)
 
-    fig, ax = plt.subplots()
-    (line,) = ax.plot(x, y)
+    # fig, ax = plt.subplots()
+    # (line,) = ax.plot(x, y)
 
     if not cap.isOpened():
         print("Cannot open camera")
         exit()
     i = 0
     while True:
-        y = np.sin(x + i * 0.1)  # Change y data
-        line.set_ydata(y)  # Update the data in the plot
-        fig.canvas.draw()  # Redraw the current figure
-        fig.canvas.flush_events()  # Process UI events
-        i += 1
+        # y = np.sin(x + i * 0.1)  # Change y data
+        # line.set_ydata(y)  # Update the data in the plot
+        # fig.canvas.draw()  # Redraw the current figure
+        # fig.canvas.flush_events()  # Process UI events
+        # i += 1
 
         ret, img = cap.read()
         if not ret:
@@ -41,8 +41,8 @@ if __name__ == "__main__":
             mp.solutions.pose.POSE_CONNECTIONS,
             landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style(),
         )
-        cv2.imshow("pose", img)
-        if cv2.waitKey(5) == ord("q"):
-            break
+        # cv2.imshow("pose", img)
+        # if cv2.waitKey(5) == ord("q"):
+        #     break
     cap.release()
     cv2.destroyAllWindows()
