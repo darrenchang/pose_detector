@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from time import perf_counter
+# https://threejs.org/docs/index.html#manual/en/introduction/Animation-system
 
 
 class World():
@@ -9,7 +10,7 @@ class World():
         self.ax = self.fig.add_subplot(111, projection='3d')
         self.x_limit = [0, 1]
         self.y_limit = [0, 1]
-        self.z_limit = [-5, 5]
+        self.z_limit = [-2, 2]
         self.set_axis_limits()
         self.dots = []
 
