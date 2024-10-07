@@ -15,5 +15,5 @@ python -m pip install .
 
 3. Run the app
 ```
-python main.py
+gunicorn -c config.py app_main:app
 ```
