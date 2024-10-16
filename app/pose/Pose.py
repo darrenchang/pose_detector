@@ -41,7 +41,7 @@ if __name__ == "__main__":
     pose = Pose()
     world = World()
     cap = cv2.VideoCapture(0)
-    redis_connection = Redis("/tmp/redis.db")
+    redis_connection = Redis(serverconfig={"save": '""', "appendonly": "no"})
     mp_drawing = mp.solutions.drawing_utils
     mp_drawing_styles = mp.solutions.drawing_styles
 

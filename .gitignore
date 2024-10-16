@@ -1,6 +1,6 @@
-venv/
+app/venv/
 
 **/*.pyc
-build/
-pose.egg-info/
-flask_session
+app/build/
+app/pose.egg-info/
+app/flask_session
