@@ -9,5 +9,5 @@ api = pose_app.get_api()
 
 
 # API registry
-api.add_namespace(views.ns_base, path=views.ns_base.name)
-api.add_namespace(views.ns_info, path=views.ns_info.name)
+api.add_namespace(views.ns_base, path=f"/{views.ns_base.name}")
+api.add_namespace(views.ns_info, path=f"/{views.ns_info.name}")
