@@ -10,6 +10,7 @@ if [ ! -d app/venv ]; then
   python -m pip install app/.;
 fi
 
+source app/venv/bin/activate;
 (
 echo "Starting the server..."
 cd app;
