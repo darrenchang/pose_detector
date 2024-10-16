@@ -17,6 +17,8 @@ model_about = ns_base.model(model.about.name, model.about)
 @ns_info.route("/about")
 class Login(Resource):
     def get(self):
+        print(self.api.app.secret_key)
+        print(self.api.app.config.get("SOME_CUSTOM_VALUE"))
         return make_response(
             marshal(
                 {

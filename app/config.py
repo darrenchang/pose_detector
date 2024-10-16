@@ -39,6 +39,9 @@ atexit.register(cleanup)
 
 
 def post_worker_init(worker):
+    from app_main import app
+
+    app.config["SOME_CUSTOM_VALUE"] = "hello"
     atexit.unregister(_exit_function)
 
 
