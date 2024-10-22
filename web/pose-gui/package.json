@@ -36,10 +36,12 @@
     "eslint-plugin-cypress": "^4.0.0",
     "eslint-plugin-vue": "^9.29.0",
     "jsdom": "^25.0.1",
+    "naive-ui": "^2.40.1",
     "npm-run-all2": "^6.2.3",
     "prettier": "^3.3.3",
     "start-server-and-test": "^2.0.8",
     "typescript": "~5.5.4",
+    "vfonts": "^0.0.3",
     "vite": "^5.4.8",
     "vitest": "^2.1.2",
     "vue-tsc": "^2.1.6"
