@@ -1,13 +1,21 @@
 <template>
   <n-layout has-sider>
-    <n-layout-sider bordered collapse-mode="width" :width="240" :native-scrollbar="false" show-trigger>
+    <n-layout-sider class="n-layout-sider--left-placement" bordered collapse-mode="width" :width="240" :native-scrollbar="false" show-trigger>
       <n-menu :options="menuOptions" />
     </n-layout-sider>
     <n-layout-content content-style="
-        padding: 24px;
-      ">
-      hello
+          padding: 24px;
+        ">
+      hello hi sdijfoi jviocj isdojfh ewhi sdijcijew ijwfiojewiofe hello hi
+      sdijfoi jviocj isdojfh ewhi sdijcijew ijwfiojewiofe hello hi sdijfoi
+      jviocj isdojfh ewhi sdijcijew ijwfiojewiofe hello hi sdijfoi jviocj
+      isdojfh ewhi sdijcijew ijwfiojewiofe hello hi sdijfoi jviocj isdojfh ewhi
+      sdijcijew ijwfiojewiofe hello hi sdijfoi jviocj isdojfh ewhi sdijcijew
+      ijwfiojewiofe
     </n-layout-content>
+    <n-layout-sider class="n-layout-sider--right-placement" bordered collapse-mode="width" :width="240" :native-scrollbar="false" show-trigger>
+      <n-menu :options="menuOptions" />
+    </n-layout-sider>
   </n-layout>
 </template>
 <script setup lang="ts">
