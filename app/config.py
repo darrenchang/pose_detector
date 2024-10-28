@@ -35,20 +35,6 @@ p = Process(target=pose_detect_runner, kwargs={"redis_server_sock": redis_server
 p.start()
 
 
-# Make sure Pose process is killed when the main app quits
-def cleanup():
-    try:
-        parent = psutil.Process(proc.pid)
-        for child in parent.children(recursive=True):  # Recursively find child processes
-            child.terminate()
-        parent.terminate()
-    except psutil.NoSuchProcess:
-        pass  # Process already terminated
-
-
-atexit.register(cleanup)
-
-
 def post_worker_init(worker):
     main_module = importlib.import_module("app_main")
     app = getattr(main_module, "app")
