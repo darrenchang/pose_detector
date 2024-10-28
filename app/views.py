@@ -19,6 +19,7 @@ class Login(Resource):
     def get(self):
         print(self.api.app.secret_key)
         print(self.api.app.config.get("SOME_CUSTOM_VALUE"))
+        print(self.api.app.config.get("REDIS_SERVER_SOCK"))
         return make_response(
             marshal(
                 {

@@ -9,8 +9,8 @@ class PoseApp:
         app = Flask(__name__)
         app.secret_key = "some_secret"
         app.config["SESSION_TYPE"] = "FileSystem"
-        Session(app)
         app.config.setdefault("RESTX_MASK_SWAGGER", False)
+        Session(app)
         api = Api(
             app,
             prefix=self.api_prefix,
