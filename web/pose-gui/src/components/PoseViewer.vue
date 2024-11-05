@@ -6,12 +6,7 @@
     <n-layout-content content-style="
           padding: 24px;
         ">
-      hello hi sdijfoi jviocj isdojfh ewhi sdijcijew ijwfiojewiofe hello hi
-      sdijfoi jviocj isdojfh ewhi sdijcijew ijwfiojewiofe hello hi sdijfoi
-      jviocj isdojfh ewhi sdijcijew ijwfiojewiofe hello hi sdijfoi jviocj
-      isdojfh ewhi sdijcijew ijwfiojewiofe hello hi sdijfoi jviocj isdojfh ewhi
-      sdijcijew ijwfiojewiofe hello hi sdijfoi jviocj isdojfh ewhi sdijcijew
-      ijwfiojewiofe
+      <Camera />
     </n-layout-content>
     <n-layout-sider class="n-layout-sider--right-placement" bordered collapse-mode="width" :width="240" :native-scrollbar="false" show-trigger>
       <n-menu :options="menuOptions" />
@@ -28,6 +23,7 @@ import {
   PersonOutline as PersonIcon,
   WineOutline as WineIcon,
 } from '@vicons/ionicons5'
+import Camera from './Camera.vue'
 
 function renderIcon(icon: Component) {
   return () => h(NIcon, null, { default: () => h(icon) })
