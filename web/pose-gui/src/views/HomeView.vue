@@ -1,9 +1,9 @@
-<script setup lang="ts">
-import TheWelcome from '../components/PoseViewer.vue'
-</script>
-
 <template>
   <main>
-    <TheWelcome />
+    <PoseViewer />
   </main>
 </template>
+
+<script setup lang="ts">
+import PoseViewer from '../components/PoseViewer.vue'
+</script>

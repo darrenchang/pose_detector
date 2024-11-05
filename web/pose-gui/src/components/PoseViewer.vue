@@ -3,9 +3,7 @@
     <n-layout-sider class="n-layout-sider--left-placement" bordered collapse-mode="width" :width="240" :native-scrollbar="false" show-trigger>
       <n-menu :options="menuOptions" />
     </n-layout-sider>
-    <n-layout-content content-style="
-          padding: 24px;
-        ">
+    <n-layout-content>
       <Camera />
     </n-layout-content>
     <n-layout-sider class="n-layout-sider--right-placement" bordered collapse-mode="width" :width="240" :native-scrollbar="false" show-trigger>
@@ -111,6 +109,6 @@ const menuOptions = [
 
 .n-layout-content {
   background: rgba(255, 128, 128, 0.4);
-  min-height: calc(100vh - var(--header-height));
+  height: calc(100vh - var(--header-height));
 }
 </style>

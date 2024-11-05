@@ -1,12 +1,14 @@
 <template>
   <div>
     <video ref="video" autoplay playsinline webkit-playsinline muted hidden></video>
-    <canvas ref="canvas" width="800" height="640"></canvas>
-    <div>button</div>
+    <n-layout-content>
+      <canvas class="video-canvas" ref="canvas" width="800" height="640"></canvas>
+    </n-layout-content>
   </div>
 </template>
 
 <script setup lang="ts">
+import { NLayoutContent } from 'naive-ui'
 import { ref, onMounted } from 'vue';
 
 const canvas = ref(null);
@@ -43,3 +45,9 @@ function Draw() {
 }
 
 </script>
+<style scoped>
+.video-canvas {
+  width: 100%;
+  max-height: calc(100vh - var(--header-height));
+}
+</style>
