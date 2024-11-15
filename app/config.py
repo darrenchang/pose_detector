@@ -1,11 +1,9 @@
 import atexit
 import importlib
 import os
-import subprocess
 from multiprocessing import Process
 from multiprocessing.util import _exit_function
 
-import psutil
 from redislite import Redis
 
 from pose.Pose import pose_detect_runner
