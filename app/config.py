@@ -6,8 +6,10 @@ from multiprocessing.util import _exit_function
 
 from redislite import Redis
 
+from pose.Logger import Logger
 from pose.Pose import pose_detect_runner
 
+logger = Logger(__file__).get_logger()
 worker_class = "gthread"
 workers = os.cpu_count()
 threads = 2
@@ -43,3 +45,8 @@ def post_worker_init(worker):
 
 def worker_exit(server, worker):
     server.kill_worker(worker.pid, 3)
+
+
+def on_exit(server):
+    logger.info("Shutting down Redis server...")
+    redis_server.shutdown()
