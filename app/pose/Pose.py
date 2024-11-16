@@ -3,15 +3,46 @@ from time import perf_counter
 
 import cv2
 import mediapipe as mp
+
 from pose.RedisClient import RedisClient
+
 # from pose.World import World
 
 
-def pose_detect_runner(redis_server_sock: str):
-    print("redis_server_sock", redis_server_sock)
+class Pose:
+    # https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker#pose_landmarker_model
+    def __init__(self, cam: int = 0):
+        mp_pose = mp.solutions.pose
+        pose_options = {
+            "static_image_mode": True,
+            "min_detection_confidence": 0.5,
+            "min_tracking_confidence": 0.5,
+            "enable_segmentation": True,
+            "model_complexity": 0,
+        }
+        self.pose = mp_pose.Pose(**pose_options)
+
+    def inference(self, im):
+        results = self.pose.process(im)
+        landmarks = []
+        if results.pose_landmarks is not None:
+            for i, landmark in enumerate(results.pose_landmarks.landmark):
+                landmarks.append(
+                    {
+                        "index": i,
+                        "x": landmark.x,
+                        "y": landmark.y,
+                        "z": landmark.z,
+                        "visibility": landmark.visibility,
+                    }
+                )
+        return results, landmarks
+
+
+def pose_detect_runner(redis_server_sock: str, cam: int = 0):
     pose = Pose()
     # world = World()
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(cam)
     redis_client = RedisClient(server_sock=redis_server_sock)
     redis_session = redis_client.get_session()
     # mp_drawing = mp.solutions.drawing_utils
@@ -44,33 +75,3 @@ def pose_detect_runner(redis_server_sock: str):
         #     break
     cap.release()
     cv2.destroyAllWindows()
-
-
-class Pose:
-    # https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker#pose_landmarker_model
-    def __init__(self, cam: int = 0):
-        mp_pose = mp.solutions.pose
-        pose_options = {
-            "static_image_mode": True,
-            "min_detection_confidence": 0.5,
-            "min_tracking_confidence": 0.5,
-            "enable_segmentation": True,
-            "model_complexity": 0,
-        }
-        self.pose = mp_pose.Pose(**pose_options)
-
-    def inference(self, im):
-        results = self.pose.process(im)
-        landmarks = []
-        if results.pose_landmarks is not None:
-            for i, landmark in enumerate(results.pose_landmarks.landmark):
-                landmarks.append(
-                    {
-                        "index": i,
-                        "x": landmark.x,
-                        "y": landmark.y,
-                        "z": landmark.z,
-                        "visibility": landmark.visibility,
-                    }
-                )
-        return results, landmarks

@@ -31,7 +31,7 @@ redis_server_sock = redis_server.config_get("unixsocket").get("unixsocket")
 
 
 # Run pose detection process in the background
-p = Process(target=pose_detect_runner, kwargs={"redis_server_sock": redis_server_sock})
+p = Process(target=pose_detect_runner, kwargs={"redis_server_sock": redis_server_sock, "cam": 0})
 p.start()
 
 
