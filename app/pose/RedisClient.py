@@ -31,3 +31,7 @@ class RedisClient:
         )
         self._is_redis_available(pool)
         return pool
+
+    def get_connection_url(self):
+        path = self.pool.connection_kwargs.get("path")
+        return f"unix://:{path}"

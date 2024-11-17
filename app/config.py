@@ -44,11 +44,16 @@ p.start()
 pose_service_client = RpcClient(socket_path=pose_service_sock)
 
 
-def post_worker_init(worker):
+def post_fork(server, worker):
     main_module = importlib.import_module("app_main")
     app = getattr(main_module, "app")
+    pose_app = getattr(main_module, "pose_app")
     app.config["REDIS_SERVER_SOCK"] = redis_server_sock
     app.config["POSE_SERVICE_SOCK"] = pose_service_sock
+    pose_app.setup_socketio(channel="general")
+
+
+def post_worker_init(worker):
     atexit.unregister(_exit_function)
 
 

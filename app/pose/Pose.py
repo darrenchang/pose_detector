@@ -1,7 +1,7 @@
 import json
 import os
 from threading import Thread
-from time import perf_counter
+from time import perf_counter, sleep
 
 import cv2
 import mediapipe as mp
@@ -47,10 +47,13 @@ class Pose:
 class RpcService(rpyc.Service):
     def __init__(self, redis_server_sock, cam):
         self.pose = Pose()
+        self.fps = 0
         pose_runner = Thread(
             target=self.pose_detect_runner, kwargs={"redis_server_sock": redis_server_sock, "cam": cam}
         )
         pose_runner.start()
+        fps_runner = Thread(target=self.display_fps, kwargs={"interval": 1})
+        fps_runner.start()
 
     def pose_detect_runner(self, redis_server_sock: str, cam: int = 0):
         cap = cv2.VideoCapture(cam)
@@ -70,9 +73,14 @@ class RpcService(rpyc.Service):
             img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             results, landmarks = self.pose.inference(img2)
             redis_session.set("landmarks", json.dumps(landmarks))
-            logger.info(f"FPS: {1 / (perf_counter() - s)}")
+            self.fps = 1 / (perf_counter() - s)
         cap.release()
         cv2.destroyAllWindows()
+
+    def display_fps(self, interval):
+        while True:
+            logger.info(f"FPS: {self.fps:.2f}")
+            sleep(interval)
 
 
 class PoseService:
