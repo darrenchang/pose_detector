@@ -7,7 +7,8 @@ from multiprocessing.util import _exit_function
 from redislite import Redis
 
 from pose.Logger import Logger
-from pose.Pose import pose_detect_runner
+from pose.Pose import PoseService
+from pose.RpcClient import RpcClient
 
 logger = Logger(__file__).get_logger()
 worker_class = "gthread"
@@ -31,15 +32,23 @@ redis_server_sock = redis_server.config_get("unixsocket").get("unixsocket")
 
 
 # Run pose detection process in the background
-p = Process(target=pose_detect_runner, kwargs={"redis_server_sock": redis_server_sock, "cam": 0})
+pose_service_sock = "/tmp/pose.sock"
+pose_service_options = {
+    "redis_server_sock": redis_server_sock,
+    "cam": 0,
+    "socket_path": pose_service_sock,
+}
+p = Process(target=PoseService, kwargs=pose_service_options, daemon=True)
 p.start()
+
+pose_service_client = RpcClient(socket_path=pose_service_sock)
 
 
 def post_worker_init(worker):
     main_module = importlib.import_module("app_main")
     app = getattr(main_module, "app")
-    app.config["SOME_CUSTOM_VALUE"] = "hello"
     app.config["REDIS_SERVER_SOCK"] = redis_server_sock
+    app.config["POSE_SERVICE_SOCK"] = pose_service_sock
     atexit.unregister(_exit_function)
 
 
