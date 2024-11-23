@@ -31,22 +31,3 @@ class Login(Resource):
             ),
             200,
         )
-
-
-@ns_model.response(200, "Landmarks API", model_about)
-@ns_model.route("/get_landmarks")
-class Landmarks(Resource):
-    def get(self):
-        redis_client = RedisClient(self.api.app.config.get("REDIS_SERVER_SOCK"))
-        with redis_client.get_session() as redis_session:
-            landmarks = redis_session.get("landmarks")
-        logger.info(landmarks)
-        return make_response(
-            marshal(
-                {
-                    "detail": "some random stuff here...",
-                },
-                model_about,
-            ),
-            200,
-        )

@@ -6,7 +6,7 @@ from flask_restx import Api
 from flask_session import Session
 from pose.Logger import Logger
 from pose.RedisClient import RedisClient
-from SocketIO import SocketIO
+from SocketIORoutes import SocketIORoutes
 
 logger = Logger(__file__).get_logger()
 
@@ -29,7 +29,6 @@ class PoseApp:
         )
         self.app = app
         self.api = api
-        self.socketio = None
 
     def get_api_prefix(self):
         return self.api_prefix
@@ -43,4 +42,4 @@ class PoseApp:
     def setup_socketio(self, channel: str):
         logger.info(f"Setting up SocketIO on {os.getpid()}")
         redis_client = RedisClient(self.app.config.get("REDIS_SERVER_SOCK"))
-        SocketIO(redis_client.get_connection_url(), self.app, channel=channel).get_socketio()
+        SocketIORoutes(redis_client.get_connection_url(), self.app, channel=channel).get_socketio()

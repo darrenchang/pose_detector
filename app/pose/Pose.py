@@ -10,6 +10,7 @@ from rpyc.utils.server import ThreadedServer
 
 from pose.Logger import Logger
 from pose.RedisClient import RedisClient
+from pose.SocketIO import SocketIO
 
 logger = Logger(__file__).get_logger()
 
@@ -45,20 +46,20 @@ class Pose:
 
 
 class RpcService(rpyc.Service):
-    def __init__(self, redis_server_sock, cam):
+    def __init__(self, redis_server_sock: str, cam, socketio_channel: str):
         self.pose = Pose()
         self.fps = 0
+        self.redis_client = RedisClient(server_sock=redis_server_sock)
+        self.socketio = SocketIO(self.redis_client.get_connection_url()).get_socketio()
         pose_runner = Thread(
             target=self.pose_detect_runner, kwargs={"redis_server_sock": redis_server_sock, "cam": cam}
         )
         pose_runner.start()
-        fps_runner = Thread(target=self.display_fps, kwargs={"interval": 1})
+        fps_runner = Thread(target=self.display_fps, kwargs={"interval": 5})
         fps_runner.start()
 
     def pose_detect_runner(self, redis_server_sock: str, cam: int = 0):
         cap = cv2.VideoCapture(cam)
-        redis_client = RedisClient(server_sock=redis_server_sock)
-        redis_session = redis_client.get_session()
 
         if not cap.isOpened():
             logger.warning("Cannot open camera")
@@ -72,7 +73,7 @@ class RpcService(rpyc.Service):
             img = cv2.resize(img, (1920, 1080))
             img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             results, landmarks = self.pose.inference(img2)
-            redis_session.set("landmarks", json.dumps(landmarks))
+            self.socketio.emit("pose_landmarks", landmarks, to="host_cam", namespace="/api/model/get_landmarks")
             self.fps = 1 / (perf_counter() - s)
         cap.release()
         cv2.destroyAllWindows()
@@ -84,9 +85,16 @@ class RpcService(rpyc.Service):
 
 
 class PoseService:
-    def __init__(self, socket_path: str, redis_server_sock: str, cam: int) -> None:
+    def __init__(
+        self,
+        socket_path: str,
+        redis_server_sock: str,
+        cam: int,
+        socketio_channel: str,
+    ) -> None:
         self.socket_path = socket_path
         self.redis_server_sock = redis_server_sock
+        self.socketio_channel = socket_path
         self.cam = cam
         self.__start_service()
         self.server = None
@@ -95,7 +103,11 @@ class PoseService:
         if os.path.exists(self.socket_path):
             os.remove(self.socket_path)
         self.server = ThreadedServer(
-            RpcService(redis_server_sock=self.redis_server_sock, cam=self.cam),
+            RpcService(
+                redis_server_sock=self.redis_server_sock,
+                cam=self.cam,
+                socketio_channel=self.socketio_channel,
+            ),
             socket_path=self.socket_path,
             logger=logger,
         )
