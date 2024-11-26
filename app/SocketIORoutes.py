@@ -38,7 +38,7 @@ class SocketIORoutes(SocketIO):
         @self.socketio.on("subscribe", namespace="/api/model/get_landmarks")
         def handle_subscribe(data):
             sid = request.sid
-            uuid = data.get("uuid")
+            uuid = data.get("cam_id")
             if uuid:
                 logger.info(f"Client {sid} subscribing to room {uuid}...")
                 join_room(uuid, sid=sid)
@@ -47,7 +47,7 @@ class SocketIORoutes(SocketIO):
         @self.socketio.on("unsubscribe", namespace="/api/model/get_landmarks")
         def handle_unsubscribe(data):
             sid = request.sid
-            uuid = data.get("uuid")
+            uuid = data.get("cam_id")
             if uuid:
                 logger.info(f"Client {sid} unsubscribing from room {uuid}...")
                 leave_room(uuid, sid=sid)
