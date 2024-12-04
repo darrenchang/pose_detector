@@ -7,15 +7,27 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    vue(),
+    vue({
+      template: {
+        compilerOptions: {
+          // i am ignorning my custom '<container>' tag
+          isCustomElement: tag => [
+            'TresPerspectiveCamera',
+            'TresTorusGeometry',
+            'TresMeshBasicMaterial',
+            'TresMesh',
+          ].includes(tag),
+        },
+      },
+    }),
     vueJsx(),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
   },
   server: {
-    host: "0.0.0.0",
+    host: '0.0.0.0',
   },
 })
