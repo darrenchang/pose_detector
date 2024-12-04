@@ -6,4 +6,5 @@
 
 <script setup lang="ts">
 import PoseViewer from '../components/PoseViewer.vue'
+
 </script>
