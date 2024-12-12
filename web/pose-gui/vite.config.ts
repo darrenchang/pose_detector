@@ -15,6 +15,7 @@ export default defineConfig({
             'TresPerspectiveCamera',
             'TresTorusGeometry',
             'TresMeshBasicMaterial',
+            'TresAmbientLight',
             'TresMesh',
           ].includes(tag),
         },

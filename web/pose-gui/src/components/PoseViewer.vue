@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { NLayoutContent } from 'naive-ui'
 import { TresCanvas } from '@tresjs/core'
+import SubComponent from './SubComponent.vue'
+import { io } from "socket.io-client";
+
+const URL = "http://localhost:8000/api/model/get_landmarks";
+const socket = io(URL, {
+path: '/socket.io',
+transports: ['websocket'],
+});
 
 </script>
 
@@ -16,6 +24,7 @@ import { TresCanvas } from '@tresjs/core'
         <TresMeshBasicMaterial color="orange" />
       </TresMesh>
       <TresAmbientLight :intensity="1" />
+      <SubComponent />
     </TresCanvas>
   </n-layout-content>
 </template>
