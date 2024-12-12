@@ -2,18 +2,21 @@
 import { NLayoutContent } from 'naive-ui'
 import { TresCanvas } from '@tresjs/core'
 import SubComponent from './SubComponent.vue'
-import { io } from "socket.io-client";
+import { state } from "@/socket";
+import { connect, disconnect, sub } from '../composables/socketManager';
+import { computed } from 'vue'
 
-const URL = "http://localhost:8000/api/model/get_landmarks";
-const socket = io(URL, {
-path: '/socket.io',
-transports: ['websocket'],
-});
+
+const connected = computed(() => state.connected);
 
 </script>
 
 <template>
   <n-layout-content>
+    <p @click="connect()">connect</p>
+    <p @click="disconnect()">disconnect</p>
+    <p @click="sub()">sub</p>
+    <p>State: {{ connected }}</p>
     <TresCanvas clear-color="#82DBC5">
       <TresPerspectiveCamera
         :position="[3, 3, 3]"
