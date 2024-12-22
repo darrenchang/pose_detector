@@ -2,36 +2,43 @@
 import { NLayoutContent } from 'naive-ui'
 import { TresCanvas, useRenderLoop } from '@tresjs/core'
 import { socket } from '@/socket'
-import { usePostLandmarksStore } from '@/stores/poseLandmarks'
 import { shallowRef } from 'vue';
 
 const { onLoop} = useRenderLoop()
-const poseLandmarksStore = usePostLandmarksStore()
 
-let nose = [3, 3, 3]
+let nose = [0, 0, 0]
+let left = [0, 0, 0]
 socket.on('pose_landmarks', message => {
   if (message.length <= 0) {
     return;
   }
   let nose_l = message[0];
-  console.log(nose_l);
-  let factor = 2
+  let left_l = message[15];
+  let factor = 2;
   nose = [
     nose_l["x"] * factor,
     nose_l["y"] * factor,
     nose_l["z"] * factor,
   ];
-  poseLandmarksStore.updatePoseLandmarks(nose);
+  left = [
+    left_l["x"] * factor,
+    left_l["y"] * factor,
+    left_l["z"] * factor,
+  ];
 })
 
 
-const cubeRef = shallowRef()
+const noseRef = shallowRef()
+const leftRef = shallowRef()
 onLoop(({ delta, elapsed }) => {
-  if (!cubeRef.value) {
+  if (!noseRef.value) {
     return;
   }
-    cubeRef.value.position.x = 1 - nose[0];
-    cubeRef.value.position.y = 1 - nose[1];
+    noseRef.value.position.x = 1 - nose[0];
+    noseRef.value.position.y = 1 - nose[1];
+    leftRef.value.position.x = 1 - left[0];
+    leftRef.value.position.y = 1 - left[1];
+    leftRef.value.position.z = 1 - left[2];
 })
 </script>
 
@@ -39,12 +46,16 @@ onLoop(({ delta, elapsed }) => {
   <n-layout-content>
     <TresCanvas clear-color="#82DBC5">
       <TresPerspectiveCamera
-        :position="[0, 0, -6]"
+        :position="[0, 0, 6]"
         :fov="45"
         :look-at="[0, 0, 0]"
       />
-      <TresMesh ref="cubeRef" :position="[0, 0, 0]">
-        <TresBoxGeometry />
+      <TresMesh ref="noseRef" :position="[0, 0, 0]">
+        <TresBoxGeometry :args="[0.1, 0.1, 0.1]" />
+        <TresMeshNormalMaterial color="orange" />
+      </TresMesh>
+      <TresMesh ref="leftRef" :position="[0, 0, 0]">
+        <TresBoxGeometry :args="[0.1, 0.1, 0.1]" />
         <TresMeshNormalMaterial color="orange" />
       </TresMesh>
       <TresAmbientLight :intensity="1" />
