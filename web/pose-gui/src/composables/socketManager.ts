@@ -8,7 +8,6 @@ export function disconnect() {
   socket.disconnect()
 }
 
-export function sub() {
-  const dd = { cam_id: 'host_cam' }
-  socket.emit('subscribe', dd);
+export function sub(camId: string) {
+  socket.emit('subscribe', { cam_id: camId });
 }
