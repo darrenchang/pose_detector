@@ -44,6 +44,7 @@ const menuOptionsLandmarkSource = [
 ]
 
 onMounted(async () => {
+  connect();
   sub(defaultLandmarkSource);
 })
 
