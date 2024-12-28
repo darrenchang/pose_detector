@@ -49,6 +49,8 @@ class RpcService(rpyc.Service):
     def __init__(self, redis_server_sock: str, cam, socketio_channel: str):
         self.pose = Pose()
         self.fps = 0
+        self.target_fps = 10
+        self.frame_duration = 1.0 / self.target_fps
         self.redis_client = RedisClient(server_sock=redis_server_sock)
         self.socketio = SocketIO(self.redis_client.get_connection_url()).get_socketio()
         pose_runner = Thread(
@@ -74,6 +76,11 @@ class RpcService(rpyc.Service):
             img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             results, landmarks = self.pose.inference(img2)
             self.socketio.emit("pose_landmarks", landmarks, to="host_cam", namespace="/api/model/get_landmarks")
+            # Calculate elapsed time
+            elapsed_time = perf_counter() - s
+            # Sleep for the remaining time to match the target frame duration
+            if elapsed_time < self.frame_duration:
+                sleep(self.frame_duration - elapsed_time)
             self.fps = 1 / (perf_counter() - s)
         cap.release()
         cv2.destroyAllWindows()
