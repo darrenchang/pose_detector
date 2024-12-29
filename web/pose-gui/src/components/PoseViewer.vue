@@ -1,63 +1,87 @@
 <script setup lang="ts">
 import { NLayoutContent } from 'naive-ui'
 import { TresCanvas, useRenderLoop } from '@tresjs/core'
+import { Mesh } from 'three';
 import { socket } from '@/socket'
-import { shallowRef } from 'vue';
+import { shallowRef } from 'vue'
 
-const { onLoop} = useRenderLoop()
+const { onLoop } = useRenderLoop()
 
-let nose = [0, 0, 0]
-let left = [0, 0, 0]
+interface poseLandmarksInterface {
+  [key: string]: number[];
+}
+const factor = 2
+let poseLandmarks: poseLandmarksInterface = {
+  nose: [0, 0, 0],
+  leftEyeInner: [0, 0, 0],
+  leftEye: [0, 0, 0],
+  leftEyeOuter: [0, 0, 0],
+  rightEyeInner: [0, 0, 0],
+  rightEye: [0, 0, 0],
+  rightEyeOuter: [0, 0, 0],
+  leftEar: [0, 0, 0],
+  rightEar: [0, 0, 0],
+  mouthLeft: [0, 0, 0],
+  mouthRight: [0, 0, 0],
+  leftShoulder: [0, 0, 0],
+  rightShoulder: [0, 0, 0],
+  leftElbow: [0, 0, 0],
+  rightElbow: [0, 0, 0],
+  leftWrist: [0, 0, 0],
+  rightWrist: [0, 0, 0],
+  leftPinky: [0, 0, 0],
+  rightPinky: [0, 0, 0],
+  leftIndex: [0, 0, 0],
+  rightIndex: [0, 0, 0],
+  leftThumb: [0, 0, 0],
+  rightThumb: [0, 0, 0],
+  leftHip: [0, 0, 0],
+  rightHip: [0, 0, 0],
+  leftKnee: [0, 0, 0],
+  rightKnee: [0, 0, 0],
+  leftAnkle: [0, 0, 0],
+  rightAnkle: [0, 0, 0],
+  leftHeel: [0, 0, 0],
+  rightHeel: [0, 0, 0],
+  leftFootIndex: [0, 0, 0],
+  rightFootIndex: [0, 0, 0],
+}
+
 socket.on('pose_landmarks', message => {
   if (message.length <= 0) {
-    return;
+    return
   }
-  let nose_l = message[0];
-  let left_l = message[15];
-  let factor = 2;
-  nose = [
-    nose_l["x"] * factor,
-    nose_l["y"] * factor,
-    nose_l["z"] * factor,
-  ];
-  left = [
-    left_l["x"] * factor,
-    left_l["y"] * factor,
-    left_l["z"] * factor,
-  ];
+  Object.keys(poseLandmarks).forEach((key, index) => {
+    const position = [message[index]['x'] * factor, message[index]['y'] * factor, message[index]['z'] * factor];
+    poseLandmarks[key] = position;
+  });
 })
 
-
-const noseRef = shallowRef()
-const leftRef = shallowRef()
+const landmarksGroupRef = shallowRef()
 onLoop(({ delta, elapsed }) => {
-  if (!noseRef.value) {
-    return;
+  if (!landmarksGroupRef.value) {
+    return
   }
-    noseRef.value.position.x = 1 - nose[0];
-    noseRef.value.position.y = 1 - nose[1];
-    leftRef.value.position.x = 1 - left[0];
-    leftRef.value.position.y = 1 - left[1];
-    leftRef.value.position.z = 1 - left[2];
+  const landmarks: Mesh[] = landmarksGroupRef.value.children;
+  landmarks.forEach((item, _) => {
+    // console.log(typeof item)
+    item.position.x = 1 - poseLandmarks[item.name][0]
+    item.position.y = 1 - poseLandmarks[item.name][1]
+    item.position.z = 1 - poseLandmarks[item.name][2]
+  })
 })
 </script>
 
 <template>
   <n-layout-content>
     <TresCanvas clear-color="#82DBC5">
-      <TresPerspectiveCamera
-        :position="[0, 0, 6]"
-        :fov="45"
-        :look-at="[0, 0, 0]"
-      />
-      <TresMesh ref="noseRef" :position="[0, 0, 0]">
-        <TresBoxGeometry :args="[0.1, 0.1, 0.1]" />
-        <TresMeshNormalMaterial color="orange" />
-      </TresMesh>
-      <TresMesh ref="leftRef" :position="[0, 0, 0]">
-        <TresBoxGeometry :args="[0.1, 0.1, 0.1]" />
-        <TresMeshNormalMaterial color="orange" />
-      </TresMesh>
+      <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
+      <TresGroup ref="landmarksGroupRef" :position="[0,0,0]">
+        <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
+          <TresBoxGeometry :args="[0.1, 0.1, 0.1]" />
+          <TresMeshNormalMaterial color="orange" />
+        </TresMesh>
+      </TresGroup>
       <TresAmbientLight :intensity="1" />
     </TresCanvas>
   </n-layout-content>
