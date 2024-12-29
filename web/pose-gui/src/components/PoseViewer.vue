@@ -56,6 +56,16 @@ socket.on('pose_landmarks', message => {
   });
 })
 
+function lerp(start: number, end: number, delta: number) {
+  const smoothingFactor = 10
+  const threshold = 0.3;
+  if (Math.abs(end - start) > threshold) {
+    return end;
+  } else {
+    return start + (end - start) * delta * smoothingFactor;
+  }
+}
+
 const landmarksGroupRef = shallowRef()
 onLoop(({ delta, elapsed }) => {
   if (!landmarksGroupRef.value) {
@@ -63,10 +73,12 @@ onLoop(({ delta, elapsed }) => {
   }
   const landmarks: any[] = landmarksGroupRef.value.children;
   landmarks.forEach((item, _) => {
-    // console.log(typeof item)
-    item.position.x = 1 - poseLandmarks[item.name][0]
-    item.position.y = 1 - poseLandmarks[item.name][1]
-    item.position.z = 1 - poseLandmarks[item.name][2]
+    const newX = 1 - poseLandmarks[item.name][0];
+    item.position.x = lerp(item.position.x, newX, delta);
+    const newY = 1 - poseLandmarks[item.name][1];
+    item.position.y = lerp(item.position.y, newY, delta);
+    const newZ = 1 - poseLandmarks[item.name][2];
+    item.position.z = lerp(item.position.z, newZ, delta);
   })
 })
 </script>
