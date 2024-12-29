@@ -94,42 +94,42 @@ let poseLandmarks: poseLandmarksInterface = {
   },
   leftWrist: {
     cubeColor: 'orage',
-    cubeSize: [0.1, 0.1, 0.1],
+    cubeSize: [0.05, 0.05, 0.05],
     position: [0, 0, 0],
   },
   rightWrist: {
     cubeColor: 'orage',
-    cubeSize: [0.1, 0.1, 0.1],
+    cubeSize: [0.05, 0.05, 0.05],
     position: [0, 0, 0],
   },
   leftPinky: {
     cubeColor: 'orage',
-    cubeSize: [0.1, 0.1, 0.1],
+    cubeSize: [0.05, 0.05, 0.05],
     position: [0, 0, 0],
   },
   rightPinky: {
     cubeColor: 'orage',
-    cubeSize: [0.1, 0.1, 0.1],
+    cubeSize: [0.05, 0.05, 0.05],
     position: [0, 0, 0],
   },
   leftIndex: {
     cubeColor: 'orage',
-    cubeSize: [0.1, 0.1, 0.1],
+    cubeSize: [0.05, 0.05, 0.05],
     position: [0, 0, 0],
   },
   rightIndex: {
     cubeColor: 'orage',
-    cubeSize: [0.1, 0.1, 0.1],
+    cubeSize: [0.05, 0.05, 0.05],
     position: [0, 0, 0],
   },
   leftThumb: {
     cubeColor: 'orage',
-    cubeSize: [0.1, 0.1, 0.1],
+    cubeSize: [0.05, 0.05, 0.05],
     position: [0, 0, 0],
   },
   rightThumb: {
     cubeColor: 'orage',
-    cubeSize: [0.1, 0.1, 0.1],
+    cubeSize: [0.05, 0.05, 0.05],
     position: [0, 0, 0],
   },
   leftHip: {
@@ -198,13 +198,14 @@ socket.on('pose_landmarks', message => {
   })
 })
 
-function lerp(start: number, end: number, delta: number) {
-  const smoothingFactor = 10
+function smoothing(start: number, end: number, delta: number) {
+  const speed = Math.min(Math.max(end - start * 2, 7), 10)
+  const alpha = 1 - Math.exp(-speed * delta)
   const threshold = 0.3
   if (Math.abs(end - start) > threshold) {
     return end
   } else {
-    return start + (end - start) * delta * smoothingFactor
+    return start + (end - start) * alpha
   }
 }
 
@@ -216,11 +217,11 @@ onLoop(({ delta, elapsed }) => {
   const landmarks: any[] = landmarksGroupRef.value.children
   landmarks.forEach((item, _) => {
     const newX = 1 - poseLandmarks[item.name].position[0]
-    item.position.x = lerp(item.position.x, newX, delta)
+    item.position.x = smoothing(item.position.x, newX, delta)
     const newY = 1 - poseLandmarks[item.name].position[1]
-    item.position.y = lerp(item.position.y, newY, delta)
+    item.position.y = smoothing(item.position.y, newY, delta)
     const newZ = 1 - poseLandmarks[item.name].position[2]
-    item.position.z = lerp(item.position.z, newZ, delta)
+    item.position.z = smoothing(item.position.z, newZ, delta)
   })
 })
 </script>
@@ -228,9 +229,18 @@ onLoop(({ delta, elapsed }) => {
 <template>
   <n-layout-content>
     <TresCanvas clear-color="#82DBC5">
-      <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
+      <TresPerspectiveCamera
+        :position="[0, 0, 6]"
+        :fov="45"
+        :look-at="[0, 0, 0]"
+      />
       <TresGroup ref="landmarksGroupRef" :position="[0, 0, 0]">
-        <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
+        <TresMesh
+          v-for="(landmark, key) in poseLandmarks"
+          :name="key"
+          :key="key"
+          :position="[-1, -1, -1]"
+        >
           <TresBoxGeometry :args="landmark.cubeSize" />
           <TresMeshNormalMaterial :color="landmark.cubeColor" />
         </TresMesh>
