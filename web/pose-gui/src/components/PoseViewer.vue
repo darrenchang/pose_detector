@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { NLayoutContent } from 'naive-ui'
 import { TresCanvas, useRenderLoop } from '@tresjs/core'
-import { Mesh } from 'three';
 import { socket } from '@/socket'
 import { shallowRef } from 'vue'
 
@@ -62,7 +61,7 @@ onLoop(({ delta, elapsed }) => {
   if (!landmarksGroupRef.value) {
     return
   }
-  const landmarks: Mesh[] = landmarksGroupRef.value.children;
+  const landmarks: any[] = landmarksGroupRef.value.children;
   landmarks.forEach((item, _) => {
     // console.log(typeof item)
     item.position.x = 1 - poseLandmarks[item.name][0]
