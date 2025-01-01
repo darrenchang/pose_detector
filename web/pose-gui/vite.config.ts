@@ -6,6 +6,19 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: '0.0.0.0',
+    open: true,
+    port: 8080,
+    proxy: {
+      '/api/': {
+        target: 'http://localhost:8000/',
+        ws: true,
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
   plugins: [
     vue({
       template: {
@@ -45,8 +58,5 @@ export default defineConfig({
         /assets\/swagger-ui\/swagger-ui-standalone-preset.js$/,
       ],
     },
-  },
-  server: {
-    host: '0.0.0.0',
   },
 })

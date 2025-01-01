@@ -23,7 +23,7 @@ class PoseApp:
             app,
             prefix=self.api_prefix,
             title="Pose",
-            description="Some description",
+            description="REST API for pose detection",
             version="",
             doc=False,
         )
