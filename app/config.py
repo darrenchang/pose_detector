@@ -11,6 +11,7 @@ from pose.Pose import PoseService
 from pose.RpcClient import RpcClient
 
 logger = Logger(__file__).get_logger()
+bind = "0.0.0.0:8000"
 worker_class = "gthread"
 workers = os.cpu_count()
 threads = 2
