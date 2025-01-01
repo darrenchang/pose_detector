@@ -7,7 +7,6 @@ export const state = reactive({
 })
 
 const URL = `${getBaseApiUrl()}/model/get_landmarks`
-console.log(URL)
 
 export const socket = io(URL, {
   path: '/socket.io',
