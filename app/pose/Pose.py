@@ -1,4 +1,3 @@
-import json
 import os
 from threading import Thread
 from time import perf_counter, sleep
@@ -24,7 +23,7 @@ class Pose:
             "min_detection_confidence": 0.5,
             "min_tracking_confidence": 0.5,
             "enable_segmentation": True,
-            "model_complexity": 0,
+            "model_complexity": 2,
         }
         self.pose = mp_pose.Pose(**pose_options)
 
@@ -49,7 +48,7 @@ class RpcService(rpyc.Service):
     def __init__(self, redis_server_sock: str, cam, socketio_channel: str):
         self.pose = Pose()
         self.fps = 0
-        self.target_fps = 10
+        self.target_fps = 5
         self.frame_duration = 1.0 / self.target_fps
         self.redis_client = RedisClient(server_sock=redis_server_sock)
         self.socketio = SocketIO(self.redis_client.get_connection_url()).get_socketio()
