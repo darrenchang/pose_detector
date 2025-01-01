@@ -11,16 +11,17 @@ export default defineConfig({
       template: {
         compilerOptions: {
           // i am ignorning my custom '<container>' tag
-          isCustomElement: tag => [
-            'TresPerspectiveCamera',
-            'TresTorusGeometry',
-            'TresMeshBasicMaterial',
-            'TresAmbientLight',
-            'TresMesh',
-            'TresMeshNormalMaterial',
-            'TresBoxGeometry',
-            'TresGroup',
-          ].includes(tag),
+          isCustomElement: tag =>
+            [
+              'TresPerspectiveCamera',
+              'TresTorusGeometry',
+              'TresMeshBasicMaterial',
+              'TresAmbientLight',
+              'TresMesh',
+              'TresMeshNormalMaterial',
+              'TresBoxGeometry',
+              'TresGroup',
+            ].includes(tag),
         },
       },
     }),
@@ -29,6 +30,20 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
+  optimizeDeps: {
+    include: [
+      '@/assets/swagger-ui/swagger-ui-es-bundle.js',
+      '@/assets/swagger-ui/swagger-ui-standalone-preset.js',
+    ],
+  },
+  build: {
+    commonjsOptions: {
+      include: [
+        /assets\/swagger-ui\/swagger-ui-es-bundle.js$/,
+        /assets\/swagger-ui\/swagger-ui-standalone-preset.js$/,
+      ],
     },
   },
   server: {
