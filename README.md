@@ -1,8 +1,15 @@
 # Pose detection
-A description here
+A pose detection tool for computer vision.
 
-# How to
-1. Start the app
+[![rickroll.gif](https://i.postimg.cc/QM22zj9W/rickroll.gif)](https://postimg.cc/GBjg8wjc)
+
+# Getting started
+1. Start the app backend
     ``` bash
     ./start.sh
+    ```
+
+2. Start the app frontend
+    ``` bash
+    ./start-web.sh
     ```
