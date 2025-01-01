@@ -12,7 +12,7 @@ const router = createRouter({
     {
       path: '/swaggerui',
       name: 'swaggerui',
-      component: () => import('@/views/Swaggerui.vue'),
+      component: () => import('@/views/Swaggerui.vue') ,
     },
   ],
 })

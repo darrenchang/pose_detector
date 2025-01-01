@@ -1,17 +1,37 @@
 <template>
   <n-layout>
-    <n-layout-header>Pose</n-layout-header>
+    <div>
+      <n-tabs type="line" @update:value="handleUpdate" default-value="" v-model:value="currentRouteName" size="large">
+        <n-tab name="home" tab="Pose"></n-tab>
+        <n-tab name="swaggerui" tab="SwaggerUI"></n-tab>
+      </n-tabs>
+    </div>
     <RouterView />
   </n-layout>
 </template>
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import {
-  NLayout,
-  NLayoutHeader,
-} from 'naive-ui'
+import { NLayout, NTabs, NTab } from 'naive-ui'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
+const route = useRoute()
+const router = useRouter()
+let currentRouteName = ref('')
+function handleUpdate(key: string) {
+  currentRouteName.value = key
+  router.push({ name: currentRouteName.value })
+}
+
+watch(
+  () => route.name,
+  newName => {
+    if (newName) {
+      currentRouteName.value = newName.toString()
+    }
+  },
+)
 </script>
 
 <style>
