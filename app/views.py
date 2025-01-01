@@ -3,7 +3,6 @@ from flask_restx import Namespace, Resource, marshal
 
 from Model import Model
 from pose.Logger import Logger
-from pose.RedisClient import RedisClient
 
 logger = Logger(__file__).get_logger()
 
