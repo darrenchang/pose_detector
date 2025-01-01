@@ -4,6 +4,7 @@ import '@/assets/swagger-ui/swagger-ui.css'
 import SwaggerUI from '@/assets/swagger-ui/swagger-ui-es-bundle.js'
 import SwaggerUIStandalonePreset from '@/assets/swagger-ui/swagger-ui-standalone-preset.js'
 import { getBaseApiUrl } from '@/composables/apiUrl'
+import { NLayoutContent } from 'naive-ui'
 
 export default defineComponent({
   mounted() {
@@ -24,5 +25,6 @@ export default defineComponent({
 </script>
 
 <template>
-  <div id="swagger-ui"></div>
+  <n-layout-content id="swagger-ui">
+  </n-layout-content>
 </template>

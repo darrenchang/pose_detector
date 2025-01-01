@@ -6,7 +6,11 @@
         <n-tab name="swaggerui" tab="SwaggerUI"></n-tab>
       </n-tabs>
     </div>
-    <RouterView />
+    <router-view v-slot="{ Component }">
+      <transition>
+        <component :is="Component" />
+      </transition>
+    </router-view>
   </n-layout>
 </template>
 
