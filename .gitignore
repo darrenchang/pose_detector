@@ -1,6 +1,8 @@
 app/venv/
 
+**/.DS_Store
 **/*.pyc
 app/build/
 app/pose.egg-info/
 app/flask_session
+**/*.mp4
