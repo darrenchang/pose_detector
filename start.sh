@@ -33,5 +33,5 @@ source app/venv/bin/activate;
 echo "Starting the server..."
 cd app;
 VIDEO_SOURCE=${VIDEO_SOURCE} \
-gunicorn -c config.py app_main:app;
+gunicorn -c config.py app_main:app --reload;
 )
