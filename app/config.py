@@ -36,7 +36,7 @@ redis_server_sock = redis_server.config_get("unixsocket").get("unixsocket")
 pose_service_sock = "/tmp/pose.sock"
 pose_service_options = {
     "redis_server_sock": redis_server_sock,
-    "cam": 1,
+    "cam": os.getenv("VIDEO_SOURCE"),
     "socket_path": pose_service_sock,
     "socketio_channel": "general",
 }

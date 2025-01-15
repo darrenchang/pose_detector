@@ -23,7 +23,7 @@ class Pose:
             "min_detection_confidence": 0.5,
             "min_tracking_confidence": 0.5,
             "enable_segmentation": True,
-            "model_complexity": 2,
+            "model_complexity": 0,
         }
         self.pose = mp_pose.Pose(**pose_options)
 
@@ -45,10 +45,10 @@ class Pose:
 
 
 class RpcService(rpyc.Service):
-    def __init__(self, redis_server_sock: str, cam, socketio_channel: str):
+    def __init__(self, redis_server_sock: str, cam: str, socketio_channel: str):
         self.pose = Pose()
         self.fps = 0
-        self.target_fps = 5
+        self.target_fps = 100
         self.frame_duration = 1.0 / self.target_fps
         self.redis_client = RedisClient(server_sock=redis_server_sock)
         self.socketio = SocketIO(self.redis_client.get_connection_url()).get_socketio()
@@ -60,6 +60,9 @@ class RpcService(rpyc.Service):
         fps_runner.start()
 
     def pose_detect_runner(self, redis_server_sock: str, cam: int = 0):
+        if cam.isdigit():
+            # if the input value isdigit, then it's most likely a video cam
+            cam = int(cam)
         cap = cv2.VideoCapture(cam)
 
         if not cap.isOpened():
@@ -70,8 +73,8 @@ class RpcService(rpyc.Service):
             ret, img = cap.read()
             if not ret:
                 logger.warning("Cannot receive frame")
-                break
-            img = cv2.resize(img, (1920, 1080))
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                continue
             img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             results, landmarks = self.pose.inference(img2)
             self.socketio.emit("pose_landmarks", landmarks, to="host_cam", namespace="/api/model/get_landmarks")
@@ -95,7 +98,7 @@ class PoseService:
         self,
         socket_path: str,
         redis_server_sock: str,
-        cam: int,
+        cam: str,
         socketio_channel: str,
     ) -> None:
         self.socket_path = socket_path

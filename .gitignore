@@ -5,4 +5,4 @@ app/venv/
 app/build/
 app/pose.egg-info/
 app/flask_session
-**/*.mp4
+app/videos/*.mp4
