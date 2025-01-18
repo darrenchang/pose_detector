@@ -21,18 +21,16 @@ class SocketIoClient:
             namespace=namespace,
         )
         # self.event_received = threading.Event()
-        self.state = {
-            "landmarks": [],
-        }
+        self.data = None
         self.register_socketio_events(namespace)
 
     def register_socketio_events(self, namespace: str):
         @self.socketio.on(self.event_name, namespace=self.namespace)
         def handle_event(data):
-            self.state["landmarks"] = data
+            self.data = data
             self.event_received.set()
 
     def get_one(self):
         self.event_received.wait(3)
         self.socketio.disconnect()
-        return self.state
+        return self.data

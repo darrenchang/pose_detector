@@ -39,17 +39,17 @@ class Login(Resource):
 @ns_model.route("/get_landmarks")
 class GetLandmarks(Resource):
     def get(self):
+        """EDA supported"""
         landmarks = SocketIoClient(
             port=self.api.app.config.get("PORT"),
             namespace="/api/model/get_landmarks",
             event_name="pose_landmarks",
             sub_data={"cam_id": "host_cam"},
         ).get_one()
+        print(landmarks)
         return make_response(
             marshal(
-                {
-                    "pose_landmarks": landmarks.get("landmarks"),
-                },
+                landmarks,
                 model_landmarks,
             ),
             200,
