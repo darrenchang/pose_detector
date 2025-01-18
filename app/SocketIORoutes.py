@@ -1,5 +1,5 @@
 from flask import Flask, request
-from flask_socketio import emit, join_room, leave_room, send
+from flask_socketio import emit, join_room, leave_room
 
 from pose.SocketIO import SocketIO
 from pose.Logger import Logger
@@ -17,20 +17,20 @@ class SocketIORoutes(SocketIO):
         @self.socketio.on("connect", namespace=namespace)
         def handle_connect_landmarks():
             sid = request.sid
-            logger.info(f"[Channel: {self.channel}] Client connected to landmarks {sid}")
+            logger.debug(f"[Channel: {self.channel}] Client connected to landmarks {sid}")
             emit("response", {"message": "Connected to the server!"})
 
         @self.socketio.on("disconnect", namespace=namespace)
         def handle_disconnect_landmarks():
             sid = request.sid
-            logger.info(f"[Channel: {self.channel}] Client disconnected from landmarks {sid}")
+            logger.debug(f"[Channel: {self.channel}] Client disconnected from landmarks {sid}")
 
         @self.socketio.on("subscribe", namespace=namespace)
         def handle_subscribe(data):
             sid = request.sid
             uuid = data.get("cam_id")
             if uuid:
-                logger.info(f"Client {sid} subscribing to room {uuid}...")
+                logger.debug(f"Client {sid} subscribing to room {uuid}...")
                 join_room(uuid, sid=sid)
                 emit("subscribe", {"message": f"Subscribed to {uuid}"}, room=sid)
 
@@ -39,7 +39,7 @@ class SocketIORoutes(SocketIO):
             sid = request.sid
             uuid = data.get("cam_id")
             if uuid:
-                logger.info(f"Client {sid} unsubscribing from room {uuid}...")
+                logger.debug(f"Client {sid} unsubscribing from room {uuid}...")
                 leave_room(uuid, sid=sid)
                 emit("unsubscribe", {"message": f"Unsubscribed from {uuid}"}, room=sid)
 
