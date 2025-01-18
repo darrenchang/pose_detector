@@ -10,8 +10,9 @@ from pose.Logger import Logger
 from pose.Pose import PoseService
 from pose.RpcClient import RpcClient
 
+port = 8000
 logger = Logger(__file__).get_logger()
-bind = "0.0.0.0:8000"
+bind = f"0.0.0.0:{port}"
 worker_class = "gthread"
 workers = os.cpu_count()
 threads = 2
@@ -52,6 +53,7 @@ def post_fork(server, worker):
     pose_app = getattr(main_module, "pose_app")
     app.config["REDIS_SERVER_SOCK"] = redis_server_sock
     app.config["POSE_SERVICE_SOCK"] = pose_service_sock
+    app.config["PORT"] = port
     pose_app.setup_socketio(channel="general")
 
 
