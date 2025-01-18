@@ -18,6 +18,7 @@ ns_model = Namespace("model", "Endpoints related to pose model")
 # Model registry
 model: Model = Model()
 model_about = ns_base.model(model.about.name, model.about)
+ns_base.model(model.landmark.name, model.landmark)
 model_landmarks = ns_base.model(model.landmarks.name, model.landmarks)
 
 
