@@ -3,8 +3,6 @@ from flask_restx import Namespace, Resource, marshal
 
 from Model import Model
 from pose.Logger import Logger
-from pose.RedisClient import RedisClient
-from pose.SocketIO import SocketIO
 from pose.SocketIoClient import SocketIoClient
 
 logger = Logger(__file__).get_logger()
@@ -47,7 +45,6 @@ class GetLandmarks(Resource):
             event_name="pose_landmarks",
             sub_data={"cam_id": "host_cam"},
         ).get_one()
-
         return make_response(
             marshal(
                 {

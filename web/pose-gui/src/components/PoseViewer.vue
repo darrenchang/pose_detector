@@ -185,14 +185,14 @@ let poseLandmarks: poseLandmarksInterface = {
 }
 
 socket.on('pose_landmarks', message => {
-  if (message.length <= 0) {
+  if (message.pose_landmarks.length <= 0) {
     return
   }
   Object.keys(poseLandmarks).forEach((key, index) => {
     const position = [
-      message[index]['x'] * factor,
-      message[index]['y'] * factor,
-      message[index]['z'] * factor,
+      message.pose_landmarks[index]['x'] * factor,
+      message.pose_landmarks[index]['y'] * factor,
+      message.pose_landmarks[index]['z'] * factor,
     ]
     poseLandmarks[key].position = position
   })

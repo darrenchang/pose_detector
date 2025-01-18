@@ -5,8 +5,10 @@ from time import perf_counter, sleep
 import cv2
 import mediapipe as mp
 import rpyc
+from flask_restx import Namespace, marshal
 from rpyc.utils.server import ThreadedServer
 
+from Model import Model
 from pose.Logger import Logger
 from pose.RedisClient import RedisClient
 from pose.SocketIO import SocketIO
@@ -52,6 +54,9 @@ class RpcService(rpyc.Service):
         self.frame_duration = 1.0 / self.target_fps
         self.redis_client = RedisClient(server_sock=redis_server_sock)
         self.socketio = SocketIO(self.redis_client.get_connection_url()).get_socketio()
+        model: Model = Model()
+        ns_base = Namespace("base", "Namespace for registering models")
+        self.model_landmarks = ns_base.model(model.landmarks.name, model.landmarks)
         pose_runner = Thread(
             target=self.pose_detect_runner, kwargs={"redis_server_sock": redis_server_sock, "cam": cam}
         )
@@ -77,7 +82,12 @@ class RpcService(rpyc.Service):
                 continue
             img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             results, landmarks = self.pose.inference(img2)
-            self.socketio.emit("pose_landmarks", landmarks, to="host_cam", namespace="/api/model/get_landmarks")
+            self.socketio.emit(
+                "pose_landmarks",
+                marshal({"pose_landmarks": landmarks}, self.model_landmarks),
+                to="host_cam",
+                namespace="/api/model/get_landmarks",
+            )
             # Calculate elapsed time
             elapsed_time = perf_counter() - s
             # Sleep for the remaining time to match the target frame duration
