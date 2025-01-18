@@ -1,7 +1,8 @@
-from flask import make_response
+from flask import make_response, request
 from flask_restx import Namespace, Resource, marshal
 
 from Model import Model
+from Param import Param
 from pose.Logger import Logger
 from pose.SocketIoClient import SocketIoClient
 
@@ -12,6 +13,7 @@ ns_base = Namespace("base", "Namespace for registering models")
 ns_info = Namespace("info", "All information about Pose")
 ns_model = Namespace("model", "Endpoints related to pose model")
 
+param: Param = Param()
 
 # Model registry
 model: Model = Model()
@@ -35,16 +37,24 @@ class Login(Resource):
         )
 
 
+@ns_model.expect(param.get_landmarks)
 @ns_model.response(200, "Get landmarks", model_landmarks)
 @ns_model.route("/get_landmarks")
 class GetLandmarks(Resource):
     def get(self):
-        """EDA supported"""
+        """
+        SocketIO supported
+        SocketIO events:
+        - `subscribe` to pose landmark updates. Data: `{"cam_id": "host_cam"}`
+        - `unsubscribe` to pose landmark updates. Data: `{"cam_id": "host_cam"}`
+        - `pose_landmarks` - listen
+        """
+        cam_id = request.args.get("cam_id")
         landmarks = SocketIoClient(
             port=self.api.app.config.get("PORT"),
             namespace="/api/model/get_landmarks",
             event_name="pose_landmarks",
-            sub_data={"cam_id": "host_cam"},
+            sub_data={"cam_id": cam_id},
         ).get_one()
         return make_response(
             marshal(
