@@ -20,7 +20,6 @@ class SocketIoClient:
             sub_data,
             namespace=namespace,
         )
-        # self.event_received = threading.Event()
         self.data = None
         self.register_socketio_events(namespace)
 
@@ -29,8 +28,8 @@ class SocketIoClient:
         def handle_event(data):
             self.data = data
             self.event_received.set()
+            self.socketio.disconnect()
 
     def get_one(self):
         self.event_received.wait(3)
-        self.socketio.disconnect()
         return self.data

@@ -46,7 +46,6 @@ class GetLandmarks(Resource):
             event_name="pose_landmarks",
             sub_data={"cam_id": "host_cam"},
         ).get_one()
-        print(landmarks)
         return make_response(
             marshal(
                 landmarks,
