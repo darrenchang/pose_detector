@@ -12,4 +12,6 @@ A pose detection tool for computer vision.
 2. Start the app frontend
     ``` bash
     ./start-web.sh
+    # or
+    ./start-web.sh --video_source videos/tony_skate.mp4
     ```

@@ -47,7 +47,7 @@ class GetLandmarks(Resource):
         SocketIO events:
         - `subscribe` to pose landmark updates. Data: `{"cam_id": "host_cam"}`
         - `unsubscribe` to pose landmark updates. Data: `{"cam_id": "host_cam"}`
-        - `pose_landmarks` - listen
+        - `pose_landmarks` - listen. Data: `#definitions/LandmarksLandmarks`
         """
         cam_id = request.args.get("cam_id")
         landmarks = SocketIoClient(

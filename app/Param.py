@@ -16,6 +16,7 @@ class Param:
         parser = reqparse.RequestParser()
         parser.add_argument(
             "cam_id",
+            default="host_cam",
             location="query",
             help="The id of the camera",
             type=str,
