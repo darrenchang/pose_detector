@@ -1,3 +1,5 @@
+import json
+
 from flask import make_response, request
 from flask_restx import Namespace, Resource, marshal
 
@@ -17,12 +19,12 @@ param: Param = Param()
 
 # Model registry
 model: Model = Model()
-model_about = ns_base.model(model.about.name, model.about)
+model_detail = ns_base.model(model.detail.name, model.detail)
 ns_base.model(model.landmark.name, model.landmark)
 model_landmarks = ns_base.model(model.landmarks.name, model.landmarks)
 
 
-@ns_info.response(200, "About the API", model_about)
+@ns_info.response(200, "About the API", model_detail)
 @ns_info.route("/about")
 class Login(Resource):
     def get(self):
@@ -31,7 +33,7 @@ class Login(Resource):
                 {
                     "detail": "some random stuff here...",
                 },
-                model_about,
+                model_detail,
             ),
             200,
         )
@@ -60,6 +62,42 @@ class GetLandmarks(Resource):
             marshal(
                 landmarks,
                 model_landmarks,
+            ),
+            200,
+        )
+
+
+@ns_model.expect(param.save_landmarks)
+@ns_model.response(200, "Save landmarks", model_detail)
+@ns_model.response(400, "Invalid request", model_detail)
+@ns_model.route("/save_landmarks")
+class SaveLandmarks(Resource):
+    def post(self):
+        """
+        Save the landmarks to storage
+        """
+        pose_name = request.form.get("pose_name", {})
+        landmarks = request.form.get("landmarks", {})
+        try:
+            landmarks_obj = json.loads(landmarks)
+            logger.info(pose_name)
+            logger.info(landmarks_obj)
+        except Exception as e:
+            error_msg = "Invalid landmark json format"
+            logger.warning(e)
+            logger.warning(error_msg)
+            return make_response(
+                marshal(
+                    {"detail": error_msg},
+                    model_detail,
+                ),
+                403,
+            )
+
+        return make_response(
+            marshal(
+                {"detail": "success"},
+                model_detail,
             ),
             200,
         )

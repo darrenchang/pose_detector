@@ -9,9 +9,9 @@ class Model:
         pass
 
     @functools.cached_property
-    def about(self):
+    def detail(self):
         return SwaggerModel(
-            "About",
+            "Detail",
             {
                 "detail": fields.String(example="some random details"),
             },

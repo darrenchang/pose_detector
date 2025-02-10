@@ -23,3 +23,28 @@ class Param:
             required=True,
         )
         return parser
+
+    @functools.cached_property
+    def save_landmarks(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            "pose_name",
+            default="standing",
+            location="form",
+            help=(
+                "The name for the pose described by the landmarks. Example: "
+                "choose one of `['standing', 'sitting', 'lying', 'kneeling', 'all-fours']`, "
+                "or anything you can come up with."
+            ),
+            type=str,
+            required=True,
+        )
+        parser.add_argument(
+            "landmarks",
+            default="[1,2,3]",
+            location="form",
+            help="Landmark coordinates",
+            type=object,
+            required=True,
+        )
+        return parser
