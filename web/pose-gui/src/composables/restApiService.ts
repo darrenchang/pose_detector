@@ -1,14 +1,15 @@
 import axios from 'axios'
-import type { AxiosResponse } from 'axios'
-import axiosRateLimit, { RateLimitedAxiosInstance } from 'axios-rate-limit';
-import axiosRetry from 'axios-retry'
+import type { AxiosInstance } from 'axios'
+import axiosRateLimit from 'axios-rate-limit';
+import type { RateLimitedAxiosInstance } from 'axios-rate-limit';
+// import axiosRetry from 'axios-retry'
 import type { AboutInterface } from '@/interface/aboutInterface';
 import { getBaseApiUrl } from './apiUrl';
 import { ConcurrencyManager } from 'axios-concurrency'
 import { aboutInterfaceMap } from './resToInterfaceMapper';
 
 
-function getAxiosInstance(maxConcurrentRequests = 5) {
+function getAxiosInstance(maxConcurrentRequests = 5): RateLimitedAxiosInstance | AxiosInstance {
   let apiUrl = getBaseApiUrl()
   const instance = axiosRateLimit(axios.create({
     baseURL: apiUrl,
@@ -22,8 +23,8 @@ function getAxiosInstance(maxConcurrentRequests = 5) {
 
 export async function getInfo(): Promise<AboutInterface> {
   let responseData = aboutInterfaceMap();
-  await getAxiosInstance().get('/info/about').then((res: AxiosResponse) => {
-    responseData = aboutInterfaceMap(res)
+  await getAxiosInstance().get('/info/about').then((res) => {
+    responseData = res.data
   })
   return responseData
 }
