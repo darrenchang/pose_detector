@@ -3,7 +3,7 @@ import { NLayoutContent, NButton } from 'naive-ui'
 import { TresCanvas, useRenderLoop } from '@tresjs/core'
 import { socket } from '@/socket'
 import { shallowRef, ref } from 'vue'
-import { examplePoseLandmarks } from '@/composables/poseLandmarksInterface'
+import { examplePoseLandmarks } from '@/interface/poseLandmarksInterface'
 
 const { onLoop } = useRenderLoop()
 
