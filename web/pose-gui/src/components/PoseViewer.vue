@@ -7,7 +7,7 @@ import { examplePoseLandmarks } from '@/composables/poseLandmarksInterface'
 
 const { onLoop } = useRenderLoop()
 
-const factor = 2
+const canvas_factor = 2
 const poseLandmarks = examplePoseLandmarks
 let paused = ref(false);
 
@@ -18,9 +18,9 @@ socket.on('pose_landmarks', message => {
   }
   Object.keys(poseLandmarks).forEach((key, index) => {
     const position = [
-      message.pose_landmarks[index]['x'] * factor,
-      message.pose_landmarks[index]['y'] * factor,
-      message.pose_landmarks[index]['z'] * factor,
+      message.pose_landmarks[index]['x'],
+      message.pose_landmarks[index]['y'],
+      message.pose_landmarks[index]['z'],
     ]
     poseLandmarks[key].position = position
   })
@@ -28,6 +28,29 @@ socket.on('pose_landmarks', message => {
 
 function pauseView() {
   paused.value = !paused.value
+}
+
+function saveLandmarks() {
+  const landmarks_canvas: any[] = landmarksGroupRef.value.children
+  let landmarks_pose = landmarks_canvas.reduce((accumulator, cur) => {
+    accumulator.push({
+      "x": CanvasToPoseCoord(cur.position.x, canvas_factor),
+      "y": CanvasToPoseCoord(cur.position.y, canvas_factor),
+      "z": CanvasToPoseCoord(cur.position.z, canvas_factor),
+    })
+    return accumulator
+  }, [])
+  console.log(landmarks_pose)
+}
+
+function poseToCanvasCoord(coord: number, factor: number) {
+  // Convert landmarks from pose models coord to views canvas coord
+  return 1 - coord * factor
+}
+
+function CanvasToPoseCoord(coord: number, factor: number) {
+  // Convert landmarks from views canvas coord to models coord cord
+  return (1 + coord) / factor
 }
 
 function smoothing(start: number, end: number, delta: number) {
@@ -51,11 +74,11 @@ onLoop(({ delta, elapsed }) => {
   }
   const landmarks: any[] = landmarksGroupRef.value.children
   landmarks.forEach((item, _) => {
-    const newX = 1 - poseLandmarks[item.name].position[0]
+    const newX = poseToCanvasCoord(poseLandmarks[item.name].position[0], canvas_factor)
+    const newY = poseToCanvasCoord(poseLandmarks[item.name].position[1], canvas_factor)
+    const newZ = poseToCanvasCoord(poseLandmarks[item.name].position[2], canvas_factor)
     item.position.x = smoothing(item.position.x, newX, delta)
-    const newY = 1 - poseLandmarks[item.name].position[1]
     item.position.y = smoothing(item.position.y, newY, delta)
-    const newZ = 1 - poseLandmarks[item.name].position[2]
     item.position.z = smoothing(item.position.z, newZ, delta)
   })
 })
@@ -66,7 +89,7 @@ onLoop(({ delta, elapsed }) => {
     <div class="viewer-overlay">
       <div class="hud">
         <n-button @click="pauseView" class="view-control-button" type="primary">{{ paused ? 'Start' : 'Pause'}}</n-button>
-        <n-button class="view-control-button" type="primary">Save Landmarks</n-button>
+        <n-button @click="saveLandmarks" class="view-control-button" type="primary">Save Landmarks</n-button>
       </div>
     </div>
     <n-layout-content>
