@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { NLayoutContent } from 'naive-ui'
+import { NLayoutContent, NButton } from 'naive-ui'
 import { TresCanvas, useRenderLoop } from '@tresjs/core'
 import { socket } from '@/socket'
-import { shallowRef } from 'vue'
+import { shallowRef, ref } from 'vue'
 import { examplePoseLandmarks } from '@/composables/poseLandmarksInterface'
 
 const { onLoop } = useRenderLoop()
 
 const factor = 2
 const poseLandmarks = examplePoseLandmarks
+let paused = ref(false);
+
 
 socket.on('pose_landmarks', message => {
   if (message.pose_landmarks.length <= 0) {
@@ -24,6 +26,10 @@ socket.on('pose_landmarks', message => {
   })
 })
 
+function pauseView() {
+  paused.value = !paused.value
+}
+
 function smoothing(start: number, end: number, delta: number) {
   const speed = Math.min(Math.max(end - start * 2, 7), 10)
   const alpha = 1 - Math.exp(-speed * delta)
@@ -37,6 +43,9 @@ function smoothing(start: number, end: number, delta: number) {
 
 const landmarksGroupRef = shallowRef()
 onLoop(({ delta, elapsed }) => {
+  if (paused.value) {
+    return
+  }
   if (!landmarksGroupRef.value) {
     return
   }
@@ -54,15 +63,39 @@ onLoop(({ delta, elapsed }) => {
 
 <template>
   <n-layout-content>
-    <TresCanvas clear-color="#82DBC5">
-      <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
-      <TresGroup ref="landmarksGroupRef" :position="[0, 0, 0]">
-        <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
-          <TresBoxGeometry :args="landmark.cubeSize" />
-          <TresMeshNormalMaterial :color="landmark.cubeColor" />
-        </TresMesh>
-      </TresGroup>
-      <TresAmbientLight :intensity="1" />
-    </TresCanvas>
+    <div class="viewer-overlay">
+      <div class="hud">
+        <n-button @click="pauseView" class="view-control-button" type="primary">{{ paused ? 'Start' : 'Pause'}}</n-button>
+        <n-button class="view-control-button" type="primary">Save Landmarks</n-button>
+      </div>
+    </div>
+    <n-layout-content>
+      <TresCanvas clear-color="#82DBC5">
+        <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
+        <TresGroup ref="landmarksGroupRef" :position="[0, 0, 0]">
+          <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
+            <TresBoxGeometry :args="landmark.cubeSize" />
+            <TresMeshNormalMaterial :color="landmark.cubeColor" />
+          </TresMesh>
+        </TresGroup>
+        <TresAmbientLight :intensity="1" />
+      </TresCanvas>
+    </n-layout-content>
   </n-layout-content>
 </template>
+
+<style scoped>
+.viewer-overlay {
+  position: absolute;
+  z-index: 256;
+}
+.hud {
+  margin: 15px;
+}
+.hud .view-control-button:not(:first-child):not(:last-child) {
+  margin: 0 15px;
+}
+.hud .view-control-button:nth-child(2) {
+  margin-left: 15px;
+}
+</style>
