@@ -4,6 +4,7 @@ import { TresCanvas, useRenderLoop } from '@tresjs/core'
 import { socket } from '@/socket'
 import { shallowRef, ref } from 'vue'
 import { examplePoseLandmarks } from '@/interface/poseLandmarksInterface'
+import { getInfo } from '@/composables/restApiService'
 
 const { onLoop } = useRenderLoop()
 
@@ -41,6 +42,9 @@ function saveLandmarks() {
     return accumulator
   }, [])
   console.log(landmarks_pose)
+  getInfo().then((res) => {
+    console.log(res)
+  })
 }
 
 function poseToCanvasCoord(coord: number, factor: number) {
