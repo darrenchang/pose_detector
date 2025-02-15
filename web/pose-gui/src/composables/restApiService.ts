@@ -22,9 +22,9 @@ function getAxiosInstance(maxConcurrentRequests = 5): RateLimitedAxiosInstance |
 }
 
 export async function getInfo(): Promise<AboutInterface> {
-  let responseData = aboutInterfaceMap();
+  let responseData: AboutInterface = aboutInterfaceMap();
   await getAxiosInstance().get('/info/about').then((res) => {
-    responseData = res.data
+    responseData = aboutInterfaceMap(res.data)
   })
   return responseData
 }

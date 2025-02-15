@@ -1,12 +1,12 @@
-import type { AxiosResponse } from 'axios'
+import type { AboutInterface } from '@/interface/aboutInterface';
 
 
-export function aboutInterfaceMap(resdata: AxiosResponse | undefined = undefined) {
-  const responseData = {
+export function aboutInterfaceMap(resdata: AboutInterface | undefined = undefined): AboutInterface {
+  const responseData: AboutInterface = {
     'detail': '',
   }
   if (resdata !== undefined) {
-    responseData.detail = resdata.data.detail ?? '';
+    responseData.detail = resdata.detail ?? '';
   }
   return responseData
 }
