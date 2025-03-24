@@ -22,9 +22,12 @@ class Model:
         return SwaggerModel(
             "Landmark",
             {
+                "index": fields.Integer(example=0),
+                "name": fields.String(example="nose", default=""),
                 "x": fields.Float(example=0.01, default=0),
                 "y": fields.Float(example=0.01, default=0),
                 "z": fields.Float(example=0.01, default=0),
+                "visibility": fields.Float(example=0.898989),
             },
         )
 

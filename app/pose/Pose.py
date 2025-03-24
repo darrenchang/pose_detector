@@ -30,6 +30,46 @@ class Pose:
             "model_complexity": 0,
         }
         self.pose = mp_pose.Pose(**pose_options)
+        self.landmark_map = [
+            # pose landmarks diagram:
+            # https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker#pose_landmarker_model
+            # NOTE: The order of the items must match the pose landmarker model
+            # head
+            "nose",
+            "leftEyeInner",
+            "leftEye",
+            "leftEyeOuter",
+            "ghtEyeInner",
+            "rightEye",
+            "rightEyeOuter",
+            "leftEar",
+            "rightEar",
+            "mouthLeft",
+            "mouthRight",
+            # body
+            "leftShoulder",
+            "rightShoulder",
+            "leftElbow",
+            "rightElbow",
+            "leftWrist",
+            "rightWrist",
+            "leftPinky",
+            "rightPinky",
+            "leftIndex",
+            "rightIndex",
+            "leftThumb",
+            "rightThumb",
+            "leftHip",
+            "rightHip",
+            "leftKnee",
+            "rightKnee",
+            "leftAnkle",
+            "rightAnkle",
+            "leftHeel",
+            "rightHeel",
+            "leftFootIndex",
+            "rightFootIndex",
+        ]
 
     def inference(self, im):
         results = self.pose.process(im)
@@ -39,6 +79,7 @@ class Pose:
                 landmarks.append(
                     {
                         "index": i,
+                        "name": self.landmark_map[i],
                         "x": landmark.x,
                         "y": landmark.y,
                         "z": landmark.z,
