@@ -49,13 +49,13 @@ class GetLandmarks(Resource):
         SocketIO events:
         - `subscribe` to pose landmark updates. Data: `{"cam_id": "host_cam"}`
         - `unsubscribe` to pose landmark updates. Data: `{"cam_id": "host_cam"}`
-        - `pose_landmarks` - listen. Data: `#definitions/LandmarksLandmarks`
+        - `landmarks` - listen. Data: `#definitions/LandmarksLandmarks`
         """
         cam_id = request.args.get("cam_id")
         landmarks = SocketIoClient(
             port=self.api.app.config.get("PORT"),
             namespace="/api/model/get_landmarks",
-            event_name="pose_landmarks",
+            event_name="landmarks",
             sub_data={"cam_id": cam_id},
         ).get_one()
         return make_response(
@@ -76,11 +76,11 @@ class SaveLandmarks(Resource):
         """
         Save the landmarks to storage
         """
-        pose_name = request.form.get("pose_name", {})
+        landmark_name = request.form.get("landmark_name", {})
         landmarks = request.form.get("landmarks", {})
         try:
             landmarks_obj = json.loads(landmarks)
-            logger.info(pose_name)
+            logger.info(landmark_name)
             logger.info(landmarks_obj)
         except Exception as e:
             error_msg = "Invalid landmark json format"

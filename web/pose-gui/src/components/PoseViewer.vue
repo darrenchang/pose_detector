@@ -13,7 +13,7 @@ const poseLandmarks = examplePoseLandmarks
 let paused = ref(false);
 
 
-socket.on('pose_landmarks', message => {
+socket.on('landmarks', message => {
   if (message.pose_landmarks.length <= 0) {
     return
   }

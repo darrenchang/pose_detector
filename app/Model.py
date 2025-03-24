@@ -34,5 +34,6 @@ class Model:
             "Landmarks",
             {
                 "pose_landmarks": fields.List(fields.Nested(self.landmark)),
+                "hand_landmarks": fields.List(fields.Nested(self.landmark)),
             },
         )

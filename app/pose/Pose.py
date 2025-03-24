@@ -6,6 +6,8 @@ import cv2
 import mediapipe as mp
 import rpyc
 from flask_restx import Namespace, marshal
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 from rpyc.utils.server import ThreadedServer
 
 from Model import Model
@@ -43,12 +45,28 @@ class Pose:
                         "visibility": landmark.visibility,
                     }
                 )
-        return results, landmarks
+        return landmarks
+
+
+class Hand:
+    # https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker
+    def __init__(self):
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.base_options = python.BaseOptions(model_asset_path=f"{current_dir}/hand_landmarker.task")
+        self.options = vision.HandLandmarkerOptions(base_options=self.base_options, num_hands=2)
+        self.detector = vision.HandLandmarker.create_from_options(self.options)
+
+    def inference(self, im):
+        image = mp.Image(image_format=mp.ImageFormat.SRGB, data=im)
+        detection_result = self.detector.detect(image)
+        logger.info(detection_result)
+        return detection_result
 
 
 class RpcService(rpyc.Service):
     def __init__(self, redis_server_sock: str, cam: str, socketio_channel: str):
         self.pose = Pose()
+        self.hand = Hand()
         self.fps = 0
         self.target_fps = 100
         self.frame_duration = 1.0 / self.target_fps
@@ -81,9 +99,10 @@ class RpcService(rpyc.Service):
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
             img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            results, landmarks = self.pose.inference(img2)
+            landmarks = self.pose.inference(img2)
+            hand = self.hand.inference(img2)
             self.socketio.emit(
-                "pose_landmarks",
+                "landmarks",
                 marshal({"pose_landmarks": landmarks}, self.model_landmarks),
                 to="host_cam",
                 namespace="/api/model/get_landmarks",
