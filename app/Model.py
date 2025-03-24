@@ -36,7 +36,7 @@ class Model:
         return SwaggerModel(
             "Landmarks",
             {
-                "pose_landmarks": fields.List(fields.Nested(self.landmark)),
-                "hand_landmarks": fields.List(fields.Nested(self.landmark)),
+                "pose_landmarks": fields.List(fields.Nested(self.landmark), default=[]),
+                "hand_landmarks": fields.List(fields.Nested(self.landmark), default=[]),
             },
         )
