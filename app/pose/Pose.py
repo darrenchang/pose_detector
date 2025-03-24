@@ -19,7 +19,6 @@ logger = Logger(__file__).get_logger()
 
 
 class Pose:
-    # https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker#pose_landmarker_model
     def __init__(self):
         mp_pose = mp.solutions.pose
         pose_options = {
@@ -33,7 +32,7 @@ class Pose:
         self.landmark_map = [
             # pose landmarks diagram:
             # https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker#pose_landmarker_model
-            # NOTE: The order of the items must match the pose landmarker model
+            # NOTE: The order of the items must match the landmarker model
             # head
             "nose",
             "leftEyeInner",
@@ -90,7 +89,6 @@ class Pose:
 
 
 class Hand:
-    # https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker
     def __init__(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.base_options = python.BaseOptions(model_asset_path=f"{current_dir}/hand_landmarker.task")
@@ -99,7 +97,7 @@ class Hand:
         self.landmark_map = [
             # hand landmarks diagram:
             # https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker
-            # NOTE: The order of the items must match the pose landmarker model
+            # NOTE: The order of the items must match the landmarker model
             "wrist",
             "thumb_cmc",
             "thumb_mcp",
@@ -132,6 +130,7 @@ class Hand:
         }
         for i, hand in enumerate(results.handedness):
             hand_name = hand[0].display_name.lower()
+            # for k, landmark in enumerate(results.hand_landmarks[i]):
             for k, landmark in enumerate(results.hand_world_landmarks[i]):
                 landmarks[hand_name].append({
                     "index": k,

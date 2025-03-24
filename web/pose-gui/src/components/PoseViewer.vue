@@ -4,26 +4,53 @@ import { TresCanvas, useRenderLoop } from '@tresjs/core'
 import { socket } from '@/socket'
 import { shallowRef, ref } from 'vue'
 import { examplePoseLandmarks } from '@/interface/poseLandmarksInterface'
+import { exampleHandLandmarks } from '@/interface/handLandmarksInterface'
 import { getInfo } from '@/composables/restApiService'
 
 const { onLoop } = useRenderLoop()
 
 const canvas_factor = 2
-const poseLandmarks = examplePoseLandmarks
+const poseLandmarks = structuredClone(examplePoseLandmarks)
+const leftHandLandmarks = structuredClone(exampleHandLandmarks)
+const rightHandLandmarks = structuredClone(exampleHandLandmarks)
 let paused = ref(false);
 
 
 socket.on('landmarks', message => {
-  if (message.pose_landmarks.length <= 0) {
-    return
-  }
+  // Pose landmarks
   Object.keys(poseLandmarks).forEach((key, index) => {
+    if (message.pose_landmarks.length <= 0) {
+      return
+    }
     const position = [
       message.pose_landmarks[index]['x'],
       message.pose_landmarks[index]['y'],
       message.pose_landmarks[index]['z'],
     ]
     poseLandmarks[key].position = position
+  })
+  // Hand landmarks
+  Object.keys(leftHandLandmarks).forEach((key, index) => {
+    if (message.hand_landmarks.left.length <= 0) {
+      return
+    }
+    const position = [
+      message.hand_landmarks.left[index]['x'],
+      message.hand_landmarks.left[index]['y'],
+      message.hand_landmarks.left[index]['z'],
+    ]
+    leftHandLandmarks[key].position = position
+  })
+  Object.keys(rightHandLandmarks).forEach((key, index) => {
+    if (message.hand_landmarks.right.length <= 0) {
+      return
+    }
+    const position = [
+      message.hand_landmarks.right[index]['x'],
+      message.hand_landmarks.right[index]['y'],
+      message.hand_landmarks.right[index]['z'],
+    ]
+    rightHandLandmarks[key].position = position
   })
 })
 
@@ -32,7 +59,7 @@ function pauseView() {
 }
 
 function saveLandmarks() {
-  const landmarks_canvas: any[] = landmarksGroupRef.value.children
+  const landmarks_canvas: any[] = poseLandmarksGroupRef.value.children
   let landmarks_pose = landmarks_canvas.reduce((accumulator, cur) => {
     accumulator.push({
       "x": CanvasToPoseCoord(cur.position.x, canvas_factor),
@@ -68,19 +95,41 @@ function smoothing(start: number, end: number, delta: number) {
   }
 }
 
-const landmarksGroupRef = shallowRef()
+const poseLandmarksGroupRef = shallowRef()
+const leftHandLandmarksGroupRef = shallowRef()
+const rightHandLandmarksGroupRef = shallowRef()
 onLoop(({ delta, elapsed }) => {
   if (paused.value) {
     return
   }
-  if (!landmarksGroupRef.value) {
+  if (!poseLandmarksGroupRef.value || !leftHandLandmarksGroupRef.value) {
     return
   }
-  const landmarks: any[] = landmarksGroupRef.value.children
-  landmarks.forEach((item, _) => {
+  // Pose landmarks
+  const poseLandmarksAnimate: any[] = poseLandmarksGroupRef.value.children
+  poseLandmarksAnimate.forEach((item, _) => {
     const newX = poseToCanvasCoord(poseLandmarks[item.name].position[0], canvas_factor)
     const newY = poseToCanvasCoord(poseLandmarks[item.name].position[1], canvas_factor)
     const newZ = poseToCanvasCoord(poseLandmarks[item.name].position[2], canvas_factor)
+    item.position.x = smoothing(item.position.x, newX, delta)
+    item.position.y = smoothing(item.position.y, newY, delta)
+    item.position.z = smoothing(item.position.z, newZ, delta)
+  })
+  // Hand landmarks
+  const leftHandLandmarksAnimate: any[] = leftHandLandmarksGroupRef.value.children
+  leftHandLandmarksAnimate.forEach((item, _) => {
+    const newX = poseToCanvasCoord(leftHandLandmarks[item.name].position[0], canvas_factor)
+    const newY = poseToCanvasCoord(leftHandLandmarks[item.name].position[1], canvas_factor)
+    const newZ = poseToCanvasCoord(leftHandLandmarks[item.name].position[2], canvas_factor)
+    item.position.x = smoothing(item.position.x, newX, delta)
+    item.position.y = smoothing(item.position.y, newY, delta)
+    item.position.z = smoothing(item.position.z, newZ, delta)
+  })
+  const rightHandLandmarksAnimate: any[] = rightHandLandmarksGroupRef.value.children
+  rightHandLandmarksAnimate.forEach((item, _) => {
+    const newX = poseToCanvasCoord(rightHandLandmarks[item.name].position[0], canvas_factor)
+    const newY = poseToCanvasCoord(rightHandLandmarks[item.name].position[1], canvas_factor)
+    const newZ = poseToCanvasCoord(rightHandLandmarks[item.name].position[2], canvas_factor)
     item.position.x = smoothing(item.position.x, newX, delta)
     item.position.y = smoothing(item.position.y, newY, delta)
     item.position.z = smoothing(item.position.z, newZ, delta)
@@ -99,8 +148,20 @@ onLoop(({ delta, elapsed }) => {
     <n-layout-content>
       <TresCanvas clear-color="#82DBC5">
         <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
-        <TresGroup ref="landmarksGroupRef" :position="[0, 0, 0]">
+        <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]">
           <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
+            <TresBoxGeometry :args="landmark.cubeSize" />
+            <TresMeshNormalMaterial :color="landmark.cubeColor" />
+          </TresMesh>
+        </TresGroup>
+        <TresGroup ref="leftHandLandmarksGroupRef" :position="[0, 0, 0]">
+          <TresMesh v-for="(landmark, key) in leftHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
+            <TresBoxGeometry :args="landmark.cubeSize" />
+            <TresMeshNormalMaterial :color="landmark.cubeColor" />
+          </TresMesh>
+        </TresGroup>
+        <TresGroup ref="rightHandLandmarksGroupRef" :position="[0, 0, 0]">
+          <TresMesh v-for="(landmark, key) in rightHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
             <TresBoxGeometry :args="landmark.cubeSize" />
             <TresMeshNormalMaterial :color="landmark.cubeColor" />
           </TresMesh>
