@@ -32,11 +32,21 @@ class Model:
         )
 
     @functools.cached_property
+    def landmark_hand(self):
+        return SwaggerModel(
+            "Landmark",
+            {
+                "left": fields.List(fields.Nested(self.landmark), default=[]),
+                "right": fields.List(fields.Nested(self.landmark), default=[]),
+            },
+        )
+
+    @functools.cached_property
     def landmarks(self):
         return SwaggerModel(
             "Landmarks",
             {
                 "pose_landmarks": fields.List(fields.Nested(self.landmark), default=[]),
-                "hand_landmarks": fields.List(fields.Nested(self.landmark), default=[]),
+                "hand_landmarks": fields.Nested(self.landmark_hand),
             },
         )

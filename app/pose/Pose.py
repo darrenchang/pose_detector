@@ -96,12 +96,52 @@ class Hand:
         self.base_options = python.BaseOptions(model_asset_path=f"{current_dir}/hand_landmarker.task")
         self.options = vision.HandLandmarkerOptions(base_options=self.base_options, num_hands=2)
         self.detector = vision.HandLandmarker.create_from_options(self.options)
+        self.landmark_map = [
+            # hand landmarks diagram:
+            # https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker
+            # NOTE: The order of the items must match the pose landmarker model
+            "wrist",
+            "thumb_cmc",
+            "thumb_mcp",
+            "thumb_ip",
+            "thumb_tip",
+            "index_finger_mcp",
+            "index_finger_pip",
+            "index_finger_dip",
+            "index_finger_tip",
+            "middle_finger_mcp",
+            "middle_finger_pip",
+            "middle_finger_dip",
+            "middle_finger_tip",
+            "ring_finger_mcp",
+            "ring_finger_pip",
+            "ring_finger_dip",
+            "ring_finger_tip",
+            "pinky_mcp",
+            "pinky_pip",
+            "pinky_dip",
+            "pinky_tip",
+        ]
 
     def inference(self, im):
         image = mp.Image(image_format=mp.ImageFormat.SRGB, data=im)
-        detection_result = self.detector.detect(image)
-        logger.info(detection_result)
-        return detection_result
+        results = self.detector.detect(image)
+        landmarks = {
+            "left": [],
+            "right": [],
+        }
+        for i, hand in enumerate(results.handedness):
+            hand_name = hand[0].display_name.lower()
+            for k, landmark in enumerate(results.hand_world_landmarks[i]):
+                landmarks[hand_name].append({
+                    "index": k,
+                    "name": self.landmark_map[k],
+                    "x": landmark.x,
+                    "y": landmark.y,
+                    "z": landmark.z,
+                    "visibility": landmark.visibility,
+                })
+        return landmarks
 
 
 class RpcService(rpyc.Service):
@@ -144,7 +184,13 @@ class RpcService(rpyc.Service):
             hand = self.hand.inference(img2)
             self.socketio.emit(
                 "landmarks",
-                marshal({"pose_landmarks": landmarks}, self.model_landmarks),
+                marshal(
+                    {
+                        "pose_landmarks": landmarks,
+                        "hand_landmarks": hand,
+                    },
+                    self.model_landmarks,
+                ),
                 to="host_cam",
                 namespace="/api/model/get_landmarks",
             )
