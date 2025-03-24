@@ -7,11 +7,11 @@ A pose detection tool for computer vision.
 1. Start the app backend
     ``` bash
     ./start.sh
+    # or
+    ./start.sh --video_source videos/tony_skate.mp4
     ```
 
 2. Start the app frontend
     ``` bash
     ./start-web.sh
-    # or
-    ./start-web.sh --video_source videos/tony_skate.mp4
     ```
