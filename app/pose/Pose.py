@@ -130,7 +130,6 @@ class Hand:
         }
         for i, hand in enumerate(results.handedness):
             hand_name = hand[0].display_name.lower()
-            # for k, landmark in enumerate(results.hand_landmarks[i]):
             for k, landmark in enumerate(results.hand_world_landmarks[i]):
                 landmarks[hand_name].append({
                     "index": k,

@@ -81,6 +81,21 @@ function CanvasToPoseCoord(coord: number, factor: number) {
   return (1 + coord) / factor
 }
 
+function getCenter(points: number[][]): {"x": number, "y": number, "z": number} {
+  const pointSum = points.reduce((acc, cur) => {
+    acc["x_sum"] += cur[0]
+    acc["y_sum"] += cur[1]
+    acc["z_sum"] += cur[2]
+    return acc
+  }, {"x_sum": 0, "y_sum": 0, "z_sum": 0})
+  const center = {
+    x: pointSum["x_sum"] / points.length,
+    y: pointSum["y_sum"] / points.length,
+    z: pointSum["z_sum"] / points.length,
+  }
+  return center
+}
+
 function smoothing(start: number, end: number, delta: number) {
   const speed = Math.min(Math.max(end - start * 2, 7), 10)
   const alpha = 1 - Math.exp(-speed * delta)
@@ -113,20 +128,34 @@ onLoop(({ delta, elapsed }) => {
     item.position.z = smoothing(item.position.z, newZ, delta)
   })
   // Hand landmarks
+  // left hand
+  const leftPalm = getCenter([
+    poseLandmarks["leftWrist"].position,
+    poseLandmarks["leftPinky"].position,
+    poseLandmarks["leftIndex"].position,
+    poseLandmarks["leftThumb"].position,
+  ])
   const leftHandLandmarksAnimate: any[] = leftHandLandmarksGroupRef.value.children
   leftHandLandmarksAnimate.forEach((item, _) => {
-    const newX = poseToCanvasCoord(leftHandLandmarks[item.name].position[0], canvas_factor)
-    const newY = poseToCanvasCoord(leftHandLandmarks[item.name].position[1], canvas_factor)
-    const newZ = poseToCanvasCoord(leftHandLandmarks[item.name].position[2], canvas_factor)
+    const newX = poseToCanvasCoord(leftPalm.x + leftHandLandmarks[item.name].position[0], canvas_factor)
+    const newY = poseToCanvasCoord(leftPalm.y + leftHandLandmarks[item.name].position[1], canvas_factor)
+    const newZ = poseToCanvasCoord(leftPalm.z + leftHandLandmarks[item.name].position[2], canvas_factor)
     item.position.x = smoothing(item.position.x, newX, delta)
     item.position.y = smoothing(item.position.y, newY, delta)
     item.position.z = smoothing(item.position.z, newZ, delta)
   })
+  // right hand
+  const rightPalm = getCenter([
+    poseLandmarks["rightWrist"].position,
+    poseLandmarks["rightPinky"].position,
+    poseLandmarks["rightIndex"].position,
+    poseLandmarks["rightThumb"].position,
+  ])
   const rightHandLandmarksAnimate: any[] = rightHandLandmarksGroupRef.value.children
   rightHandLandmarksAnimate.forEach((item, _) => {
-    const newX = poseToCanvasCoord(rightHandLandmarks[item.name].position[0], canvas_factor)
-    const newY = poseToCanvasCoord(rightHandLandmarks[item.name].position[1], canvas_factor)
-    const newZ = poseToCanvasCoord(rightHandLandmarks[item.name].position[2], canvas_factor)
+    const newX = poseToCanvasCoord(rightPalm.x + rightHandLandmarks[item.name].position[0], canvas_factor)
+    const newY = poseToCanvasCoord(rightPalm.y + rightHandLandmarks[item.name].position[1], canvas_factor)
+    const newZ = poseToCanvasCoord(rightPalm.z + rightHandLandmarks[item.name].position[2], canvas_factor)
     item.position.x = smoothing(item.position.x, newX, delta)
     item.position.y = smoothing(item.position.y, newY, delta)
     item.position.z = smoothing(item.position.z, newZ, delta)

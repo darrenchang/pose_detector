@@ -88,42 +88,42 @@ export const poseLandmarks: poseLandmarksInterface = {
   },
   leftWrist: {
     cubeColor: 'orage',
-    cubeSize: [0.05, 0.05, 0.05],
+    cubeSize: [0.01, 0.01, 0.01],
     position: [0, 0, 0],
   },
   rightWrist: {
     cubeColor: 'orage',
-    cubeSize: [0.05, 0.05, 0.05],
+    cubeSize: [0.01, 0.01, 0.01],
     position: [0, 0, 0],
   },
   leftPinky: {
     cubeColor: 'orage',
-    cubeSize: [0.05, 0.05, 0.05],
+    cubeSize: [0.01, 0.01, 0.01],
     position: [0, 0, 0],
   },
   rightPinky: {
     cubeColor: 'orage',
-    cubeSize: [0.05, 0.05, 0.05],
+    cubeSize: [0.01, 0.01, 0.01],
     position: [0, 0, 0],
   },
   leftIndex: {
     cubeColor: 'orage',
-    cubeSize: [0.05, 0.05, 0.05],
+    cubeSize: [0.01, 0.01, 0.01],
     position: [0, 0, 0],
   },
   rightIndex: {
     cubeColor: 'orage',
-    cubeSize: [0.05, 0.05, 0.05],
+    cubeSize: [0.01, 0.01, 0.01],
     position: [0, 0, 0],
   },
   leftThumb: {
     cubeColor: 'orage',
-    cubeSize: [0.05, 0.05, 0.05],
+    cubeSize: [0.01, 0.01, 0.01],
     position: [0, 0, 0],
   },
   rightThumb: {
     cubeColor: 'orage',
-    cubeSize: [0.05, 0.05, 0.05],
+    cubeSize: [0.01, 0.01, 0.01],
     position: [0, 0, 0],
   },
   leftHip: {
