@@ -3,6 +3,11 @@ A pose detection tool for computer vision.
 
 [![rickroll.gif](https://i.postimg.cc/QM22zj9W/rickroll.gif)](https://postimg.cc/GBjg8wjc)
 
+# System requirement
+- MacOS (m1 or above)
+- Windows (not supported yet)
+- Gnu/Linux (not supported yet)
+
 # Getting started
 1. Start the app backend
     ``` bash
