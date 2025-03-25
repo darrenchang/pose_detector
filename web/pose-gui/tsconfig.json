@@ -13,5 +13,6 @@
   ],
   "compilerOptions": {
     "module": "NodeNext"
-  }
+  },
+  "include": ["src", "types", "declarations.d.ts"]
 }
