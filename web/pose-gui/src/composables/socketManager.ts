@@ -14,7 +14,6 @@ export function sub(camId: string) {
   socket.emit('subscribe', { cam_id: camId });
 }
 
-
 socket.on('landmarks', message => {
   // Pose landmarks
   Object.keys(poseLandmarks).forEach((key, index) => {

@@ -71,6 +71,7 @@ const poseLandmarksGroupRef = shallowRef()
 const leftHandLandmarksGroupRef = shallowRef()
 const rightHandLandmarksGroupRef = shallowRef()
 onLoop(({ delta, elapsed }) => {
+  void elapsed;
   if (paused.value) {
     return
   }
@@ -132,7 +133,7 @@ onLoop(({ delta, elapsed }) => {
       </div>
     </div>
     <n-layout-content>
-      <TresCanvas clear-color="#82DBC5">
+      <TresCanvas>
         <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
         <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]">
           <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
@@ -159,6 +160,9 @@ onLoop(({ delta, elapsed }) => {
 </template>
 
 <style scoped>
+.n-layout-content {
+  background: #82DBC5;
+}
 .viewer-overlay {
   position: absolute;
   z-index: 256;
