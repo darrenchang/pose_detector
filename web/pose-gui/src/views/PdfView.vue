@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import PoseViewer from '../components/PoseViewer.vue'
+import PoseViewer from '@/components/PoseViewer.vue'
 import { onMounted } from 'vue'
 import type { Component } from 'vue'
 import { NIcon } from 'naive-ui'

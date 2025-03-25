@@ -5,8 +5,13 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: () => import('@/views/HomeView.vue'),
+      name: 'pose',
+      component: () => import('@/views/PoseView.vue'),
+    },
+    {
+      path: '/pdf',
+      name: 'pdf',
+      component: () => import('@/views/PdfView.vue') ,
     },
     {
       path: '/swaggerui',

@@ -159,9 +159,6 @@ onLoop(({ delta, elapsed }) => {
 </template>
 
 <style scoped>
-.n-layout-content {
-  background: #82DBC5;
-}
 .viewer-overlay {
   position: absolute;
   z-index: 256;
