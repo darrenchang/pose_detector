@@ -10,7 +10,7 @@
         />
       </n-layout-sider>
       <n-layout-content>
-        <PoseViewer />
+        <PdfViewer />
       </n-layout-content>
       <n-layout-sider class="n-layout-sider--right-placement" bordered collapse-mode="width" :width="240"
         :native-scrollbar="false" show-trigger>
@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import PoseViewer from '@/components/PoseViewer.vue'
+import PdfViewer from '@/components/PdfViewer.vue'
 import { onMounted, onUnmounted } from 'vue'
 import type { Component } from 'vue'
 import { NIcon } from 'naive-ui'

@@ -21,6 +21,7 @@
     "axios-concurrency": "^1.0.4",
     "axios-rate-limit": "^1.4.0",
     "axios-retry": "^4.5.0",
+    "pdfjs-dist": "^5.0.375",
     "pinia": "^2.2.4",
     "socket.io-client": "^4.8.1",
     "swagger-ui-dist": "^5.18.2",
@@ -52,8 +53,8 @@
     "start-server-and-test": "^2.0.8",
     "typescript": "~5.5.4",
     "vfonts": "^0.0.3",
-    "vite": "^5.4.8",
-    "vitest": "^2.1.2",
+    "vite": "^6.2.3",
+    "vitest": "^3.0.9",
     "vue-tsc": "^2.1.6"
   }
 }
