@@ -132,7 +132,7 @@ onLoop(({ delta, elapsed }) => {
       </div>
     </div>
     <n-layout-content>
-      <TresCanvas clear-color="#82DBC5">
+      <TresCanvas>
         <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
         <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]">
           <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
