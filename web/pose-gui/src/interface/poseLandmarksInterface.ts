@@ -6,7 +6,7 @@ export interface poseLandmarksInterface {
   }
 }
 
-export const examplePoseLandmarks: poseLandmarksInterface = {
+export const poseLandmarks: poseLandmarksInterface = {
   // pose landmarks diagram https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker#pose_landmarker_model
   // NOTE: The order of the items must match the landmarker model
   // head

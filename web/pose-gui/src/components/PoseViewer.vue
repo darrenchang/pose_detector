@@ -3,16 +3,13 @@ import { NLayoutContent, NButton } from 'naive-ui'
 import { TresCanvas, useRenderLoop } from '@tresjs/core'
 import { socket } from '@/socket'
 import { shallowRef, ref } from 'vue'
-import { examplePoseLandmarks } from '@/interface/poseLandmarksInterface'
-import { exampleHandLandmarks } from '@/interface/handLandmarksInterface'
+import { poseLandmarks } from '@/interface/poseLandmarksInterface'
+import { leftHandLandmarks, rightHandLandmarks } from '@/interface/handLandmarksInterface'
 import { getInfo } from '@/composables/restApiService'
 
 const { onLoop } = useRenderLoop()
 
 const canvas_factor = 2
-const poseLandmarks = structuredClone(examplePoseLandmarks)
-const leftHandLandmarks = structuredClone(exampleHandLandmarks)
-const rightHandLandmarks = structuredClone(exampleHandLandmarks)
 let paused = ref(false);
 
 
