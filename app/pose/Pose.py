@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 from threading import Thread
 from time import perf_counter, sleep
 
 import cv2
 import mediapipe as mp
+import requests
 import rpyc
 from flask_restx import Namespace, marshal
 from mediapipe.tasks import python
@@ -90,8 +92,9 @@ class Pose:
 
 class Hand:
     def __init__(self):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.base_options = python.BaseOptions(model_asset_path=f"{current_dir}/hand_landmarker.task")
+        self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.download_model(output_path=self.current_dir)
+        self.base_options = python.BaseOptions(model_asset_path=f"{self.current_dir}/hand_landmarker.task")
         self.options = vision.HandLandmarkerOptions(base_options=self.base_options, num_hands=2)
         self.detector = vision.HandLandmarker.create_from_options(self.options)
         self.landmark_map = [
@@ -131,15 +134,38 @@ class Hand:
         for i, hand in enumerate(results.handedness):
             hand_name = hand[0].display_name.lower()
             for k, landmark in enumerate(results.hand_world_landmarks[i]):
-                landmarks[hand_name].append({
-                    "index": k,
-                    "name": self.landmark_map[k],
-                    "x": landmark.x,
-                    "y": landmark.y,
-                    "z": landmark.z,
-                    "visibility": landmark.visibility,
-                })
+                landmarks[hand_name].append(
+                    {
+                        "index": k,
+                        "name": self.landmark_map[k],
+                        "x": landmark.x,
+                        "y": landmark.y,
+                        "z": landmark.z,
+                        "visibility": landmark.visibility,
+                    }
+                )
         return landmarks
+
+    @staticmethod
+    def download_model(output_path):
+        hand_landmarker_model_url = (
+            "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/"
+            "hand_landmarker.task"
+        )
+        model_file = f"{output_path}/hand_landmarker.task"
+        if Path(model_file).exists():
+            logger.info(f"The landmarker file {model_file} is found. Skipping download.")
+            return
+        session = requests.Session()
+        with session.get(hand_landmarker_model_url, stream=True) as r:
+            if r.status_code == 200:
+                logger.info("Downloading the landmarker model...")
+                with open(model_file, "wb") as fd:
+                    for chunk in r.iter_content(chunk_size=16 * 1024):
+                        fd.write(chunk)
+            else:
+                logger.warning(f"Failed to download hand landmarker model. HTTP status code: {r.status_code}")
+        return
 
 
 class RpcService(rpyc.Service):
