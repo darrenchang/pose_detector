@@ -7,6 +7,7 @@ A pose detection tool for computer vision.
 - MacOS (m1 or above)
 - Windows (not supported yet)
 - Gnu/Linux (not supported yet)
+- Python 3.12
 
 # Getting started
 1. Start the app backend
