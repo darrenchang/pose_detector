@@ -1,6 +1,6 @@
 import * as PDFJS from "pdfjs-dist";
-import * as PDFWorker from "pdfjs-dist/build/pdf.worker.min"
+import * as PDFWorker from "pdfjs-dist/build/pdf.worker.min";
 
-void PDFWorker
-
-export const pdfjsLib = PDFJS
+export const pdfjsLib = PDFJS;
+export const pdfWorkerLib = PDFWorker;
+export const { SimpleLinkService } = await import("pdfjs-dist/web/pdf_viewer");

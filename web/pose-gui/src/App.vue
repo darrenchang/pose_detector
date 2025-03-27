@@ -9,37 +9,38 @@
     </div>
     <router-view v-slot="{ Component }">
       <transition>
-        <component :is="Component" />
+        <component :is="Component"/>
       </transition>
     </router-view>
   </n-layout>
 </template>
 
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
-import { NLayout, NTabs, NTab } from 'naive-ui'
-import { ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterView } from 'vue-router';
+import { NLayout, NTabs, NTab } from 'naive-ui';
+import { ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-const route = useRoute()
-const router = useRouter()
-let currentRouteName = ref('')
+const route = useRoute();
+const router = useRouter();
+let currentRouteName = ref('');
+
 function handleUpdate(key: string) {
-  currentRouteName.value = key
-  router.push({ name: currentRouteName.value })
+  currentRouteName.value = key;
+  router.push({ name: currentRouteName.value });
 }
 
 watch(
   () => route.name,
   newName => {
-    if (newName) {
-      currentRouteName.value = newName.toString()
+    if(newName) {
+      currentRouteName.value = newName.toString();
     }
   },
-)
+);
 </script>
 
-<style>
+<style lang="scss">
 .n-layout-sider {
   background: rgba(128, 128, 128, 0.3);
 }
