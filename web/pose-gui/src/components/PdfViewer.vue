@@ -1,22 +1,13 @@
 <template>
-  <div class="w-full">
-    <div class="badge">Annotation Layer</div>
-    <div class="page-navigation">
-      <button :disabled="currentPage <= 1" @click="--currentPage">&larr;</button>
-      <span>{{ currentPage }}/{{ totalPages }}</span>
-      <button :disabled="currentPage >= totalPages" @click="++currentPage">&rarr;</button>
-    </div>
-    <div
-      ref="pdfLayersWrapper"
-      class="pdf__layers pdfLayers border-none m-auto"
-      :style="{
-        width: `${pdfWidth}px`,
-        height: `${pdfHeight}px`,
-      }"
-    >
-      <div class="pdf__canvas-layer">
-        <canvas ref="canvasLayer"/>
+  <div class="grid grid-cols-1">
+    <div ref="pdfLayersWrapper" class="border-none m-auto" :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
+      <div class="badge">Annotation Layer</div>
+      <div class="page-navigation">
+        <button :disabled="currentPage <= 1" @click="prevPage">&larr;</button>
+        <span>{{ currentPage }}/{{ totalPages }}</span>
+        <button :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button>
       </div>
+      <div class="pdf__canvas-layer"><canvas ref="canvasLayer" /></div>
       <div ref="textLayer" class="pdf__text-layer hidden"></div>
       <div ref="annotationLayer" class="pdf__annotation-layer"></div>
     </div>
@@ -24,9 +15,11 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, watch } from 'vue';
 import type { Ref } from 'vue';
-import { onMounted, ref, watch } from 'vue';
 import { pdfjsLib, SimpleLinkService, pdfWorkerLib } from '@/composables/pdfjsLib';
+import { poseLandmarks } from '@/interface/poseLandmarksInterface';
+import { useRenderLoop } from '@tresjs/core';
 
 const pdfLayersWrapper: Ref<any> = ref(null);
 const canvasLayer: Ref<any> = ref(null);
@@ -35,11 +28,22 @@ const annotationLayer: Ref<any> = ref(null);
 const pdfSrc: string = 'https://pdfobject.com/pdf/pdf_open_parameters_acro8.pdf';
 let pdfProxy = undefined;
 let pdf = undefined;
+const { onLoop } = useRenderLoop();
 
 const currentPage: Ref<number> = ref(1);
 const totalPages: Ref<number> = ref(3);
 const pdfWidth: Ref<number> = ref(0);
 const pdfHeight: Ref<number> = ref(0);
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
 
 const getAnnotations = async (pageProxy): Promise<any> => {
   return await pageProxy.getAnnotations({ intent: "display" });
@@ -167,4 +171,50 @@ onMounted(async () => {
   }
   processLoadingTask(pdfSrc);
 });
+
+const debounceTime = 1000;
+const lastGestureTime:Ref<number> = ref(0);
+onLoop(() => {
+  if (
+    !poseLandmarks["rightWrist"] ||
+    !poseLandmarks["leftWrist"] ||
+    !poseLandmarks["rightShoulder"] ||
+    !poseLandmarks["leftShoulder"]
+  ) return;
+
+  const rightWristY = poseLandmarks["rightWrist"].position[1];
+  const leftWristY = poseLandmarks["leftWrist"].position[1];
+  const shoulderY = (poseLandmarks["rightShoulder"].position[1] + poseLandmarks["leftShoulder"].position[1]) / 2;
+  const now = Date.now();
+
+  const isBothHandsRaised = rightWristY < shoulderY && leftWristY < shoulderY;
+  if (isBothHandsRaised) {
+    return;
+  }
+
+  if (rightWristY < shoulderY && now - lastGestureTime.value > debounceTime && currentPage.value < totalPages.value) {
+    nextPage();
+    lastGestureTime.value = now;
+  }
+
+  if (leftWristY < shoulderY && now - lastGestureTime.value > debounceTime && currentPage.value > 1) {
+    prevPage();
+    lastGestureTime.value = now;
+  }
+});
 </script>
+
+<style scoped lang="scss">
+.page-navigation {
+  margin: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.page-navigation button {
+  margin: 0 10px;
+  padding: 5px 10px;
+  font-size: 18px;
+  cursor: pointer;
+}
+</style>
