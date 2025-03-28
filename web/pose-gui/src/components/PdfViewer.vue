@@ -115,7 +115,6 @@ const renderText = (pdfPageProxy, textLayerContainer, viewport) => {
 
 const renderCanvas = (pdfPageProxy, canvasLayer, viewport) => {
   const { width, height, rotation } = viewport;
-  console.log(width, height);
   pdfWidth.value = width;
   pdfHeight.value = height;
   canvasLayer.width = width;
@@ -164,7 +163,6 @@ watch(currentPage, async (newValue) => {
 
 onMounted(async () => {
   try {
-    console.log(pdfWorkerLib);
     pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerLib as any;
   } catch (e) {
     window.pdfjsWorker = pdfWorkerLib;
