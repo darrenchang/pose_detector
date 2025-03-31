@@ -1,36 +1,6 @@
 <template>
   <n-layout-content>
-    <n-layout has-sider>
-      <n-layout-sider
-        class="n-layout-sider--left-placement"
-        bordered
-        collapse-mode="width"
-        :width="240"
-        :native-scrollbar="false"
-        show-trigger
-        :default-collapsed="true"
-      >
-        <n-menu
-          :options="menuOptionsLandmarkSource"
-          :default-value="defaultLandmarkSource"
-          @update:value="handleUpdateKeys"
-        />
-      </n-layout-sider>
-      <n-layout-content>
-        <PdfViewer />
-      </n-layout-content>
-      <n-layout-sider
-        class="n-layout-sider--right-placement"
-        bordered
-        collapse-mode="width"
-        :width="240"
-        :native-scrollbar="false"
-        show-trigger
-        :default-collapsed="true"
-      >
-        <span></span>
-      </n-layout-sider>
-    </n-layout>
+    <PdfViewer />
   </n-layout-content>
 </template>
 

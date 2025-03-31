@@ -1,25 +1,58 @@
 <template>
-  <div class="grid grid-cols-1">
-    <div ref="pdfLayersWrapper" class="border-none m-auto" :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
-      <div class="badge">Annotation Layer</div>
-      <div class="page-navigation">
-        <button :disabled="currentPage <= 1" @click="prevPage">&larr;</button>
-        <span>{{ currentPage }}/{{ totalPages }}</span>
-        <button :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button>
+  <div class="flex flex-col w-full h-full">
+    <!-- 按鈕區塊 -->
+    <div class="absolute top-0 left-0 w-full h-full">
+      <div class="grid grid-cols-1 w-full h-full">
+<!--        <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"-->
+<!--                :disabled="currentPage <= 1" @click="prevPage">&larr;</button>-->
+        <div ref="pdfLayersWrapper" class="border-none m-auto"
+             :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
+          <div class="pdf__canvas-layer">
+            <canvas ref="canvasLayer" />
+          </div>
+          <div ref="textLayer" class="pdf__text-layer hidden"></div>
+          <div ref="annotationLayer" class="pdf__annotation-layer"></div>
+        </div>
+<!--        <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"-->
+<!--                :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button>-->
       </div>
-      <div class="pdf__canvas-layer"><canvas ref="canvasLayer" /></div>
-      <div ref="textLayer" class="pdf__text-layer hidden"></div>
-      <div ref="annotationLayer" class="pdf__annotation-layer"></div>
     </div>
+    <!-- 3D 渲染畫布 -->
+    <TresCanvas class="absolute top-0 left-0 w-full h-full">
+      <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
+      <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]">
+        <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :visible="false" :key="key" :position="[-1, -1, -1]">
+          <TresBoxGeometry :args="landmark.cubeSize" />
+          <TresMeshNormalMaterial :color="landmark.cubeColor" />
+        </TresMesh>
+      </TresGroup>
+      <TresGroup ref="leftHandLandmarksGroupRef" :position="[0, 0, 0]">
+        <TresMesh v-for="(landmark, key) in leftHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
+          <TresBoxGeometry :args="landmark.cubeSize" />
+          <TresMeshNormalMaterial :color="landmark.cubeColor" />
+        </TresMesh>
+      </TresGroup>
+      <TresGroup ref="rightHandLandmarksGroupRef" :position="[0, 0, 0]">
+        <TresMesh v-for="(landmark, key) in rightHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
+          <TresBoxGeometry :args="landmark.cubeSize" />
+          <TresMeshNormalMaterial :color="landmark.cubeColor" />
+        </TresMesh>
+      </TresGroup>
+      <TresAmbientLight :intensity="1" />
+    </TresCanvas>
   </div>
 </template>
 
+
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { shallowRef, ref, onMounted, watch } from 'vue';
 import type { Ref } from 'vue';
+import { NButton } from 'naive-ui'
 import { pdfjsLib, SimpleLinkService, pdfWorkerLib } from '@/composables/pdfjsLib';
 import { poseLandmarks } from '@/interface/poseLandmarksInterface';
-import { useRenderLoop } from '@tresjs/core';
+import { leftHandLandmarks, rightHandLandmarks } from '@/interface/handLandmarksInterface';
+import { TresCanvas, useRenderLoop } from '@tresjs/core';
+import { getInfo } from '@/composables/restApiService';
 
 const pdfLayersWrapper: Ref<any> = ref(null);
 const canvasLayer: Ref<any> = ref(null);
@@ -35,12 +68,12 @@ const totalPages: Ref<number> = ref(3);
 const pdfWidth: Ref<number> = ref(0);
 const pdfHeight: Ref<number> = ref(0);
 const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
+  if(currentPage.value < totalPages.value) {
     currentPage.value++;
   }
 };
 const prevPage = () => {
-  if (currentPage.value > 1) {
+  if(currentPage.value > 1) {
     currentPage.value--;
   }
 };
@@ -170,49 +203,128 @@ onMounted(async () => {
   processLoadingTask(pdfSrc);
 });
 
-const debounceTime = 1000;
-const lastGestureTime:Ref<number> = ref(0);
-onLoop(() => {
-  if (
-    !poseLandmarks["rightWrist"] ||
-    !poseLandmarks["leftWrist"] ||
-    !poseLandmarks["rightShoulder"] ||
-    !poseLandmarks["leftShoulder"]
-  ) return;
+// 分割線
+const canvas_factor = 2;
+let paused = ref(false);
 
-  const rightWristY = poseLandmarks["rightWrist"].position[1];
-  const leftWristY = poseLandmarks["leftWrist"].position[1];
-  const shoulderY = (poseLandmarks["rightShoulder"].position[1] + poseLandmarks["leftShoulder"].position[1]) / 2;
+function pauseView() {
+  paused.value = !paused.value;
+}
+
+function saveLandmarks() {
+  const landmarks_canvas: any[] = poseLandmarksGroupRef.value.children;
+  let landmarks_pose = landmarks_canvas.reduce((accumulator, cur) => {
+    accumulator.push({
+      "x": CanvasToPoseCoord(cur.position.x, canvas_factor),
+      "y": CanvasToPoseCoord(cur.position.y, canvas_factor),
+      "z": CanvasToPoseCoord(cur.position.z, canvas_factor),
+    });
+    return accumulator;
+  }, []);
+  console.log(landmarks_pose);
+  getInfo().then((res) => {
+    console.log(res);
+  });
+}
+
+function poseToCanvasCoord(coord: number, factor: number) {
+  // Convert landmarks from pose models coord to views canvas coord
+  return 1 - coord * factor;
+}
+
+function CanvasToPoseCoord(coord: number, factor: number) {
+  // Convert landmarks from views canvas coord to models coord cord
+  return (1 + coord) / factor;
+}
+
+function getCenter(points: number[][]): { "x": number, "y": number, "z": number } {
+  const pointSum = points.reduce((acc, cur) => {
+    acc["x_sum"] += cur[0];
+    acc["y_sum"] += cur[1];
+    acc["z_sum"] += cur[2];
+    return acc;
+  }, { "x_sum": 0, "y_sum": 0, "z_sum": 0 });
+  const center = {
+    x: pointSum["x_sum"] / points.length,
+    y: pointSum["y_sum"] / points.length,
+    z: pointSum["z_sum"] / points.length,
+  };
+  return center;
+}
+
+function smoothing(start: number, end: number, delta: number) {
+  const speed = Math.min(Math.max(end - start * 2, 7), 10);
+  const alpha = 1 - Math.exp(-speed * delta);
+  const threshold = 0.3;
+  if(Math.abs(end - start) > threshold) {
+    return end;
+  } else {
+    return start + (end - start) * alpha;
+  }
+}
+
+const poseLandmarksGroupRef = shallowRef();
+const leftHandLandmarksGroupRef = shallowRef();
+const rightHandLandmarksGroupRef = shallowRef();
+
+const debounceTime = 1000;
+const lastGestureTime: Ref<number> = ref(0);
+onLoop(({ delta, elapsed }) => {
+  if (paused.value) return;
+  if (!poseLandmarksGroupRef.value || !leftHandLandmarksGroupRef.value || !rightHandLandmarksGroupRef.value) return;
+
+  const updateLandmarks = (groupRef, landmarks, basePosition = { x: 0, y: 0, z: 0 }) => {
+    groupRef.value.children.forEach((item) => {
+      const landmark = landmarks[item.name].position;
+      const newX = poseToCanvasCoord(basePosition.x + landmark[0], canvas_factor);
+      const newY = poseToCanvasCoord(basePosition.y + landmark[1], canvas_factor);
+      const newZ = poseToCanvasCoord(basePosition.z + landmark[2], canvas_factor);
+      item.position.x = smoothing(item.position.x, newX, delta);
+      item.position.y = smoothing(item.position.y, newY, delta);
+      item.position.z = smoothing(item.position.z, newZ, delta);
+    });
+  };
+
+  updateLandmarks(poseLandmarksGroupRef, poseLandmarks);
+
+  const leftPalm = getCenter([
+    poseLandmarks["leftWrist"].position,
+    poseLandmarks["leftPinky"].position,
+    poseLandmarks["leftIndex"].position,
+    poseLandmarks["leftThumb"].position,
+  ]);
+  updateLandmarks(leftHandLandmarksGroupRef, leftHandLandmarks, leftPalm);
+
+  const rightPalm = getCenter([
+    poseLandmarks["rightWrist"].position,
+    poseLandmarks["rightPinky"].position,
+    poseLandmarks["rightIndex"].position,
+    poseLandmarks["rightThumb"].position,
+  ]);
+  updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, rightPalm);
+
+  const rightWrist = poseLandmarks["rightWrist"]?.position;
+  const leftWrist = poseLandmarks["leftWrist"]?.position;
+  const rightShoulder = poseLandmarks["rightShoulder"]?.position;
+  const leftShoulder = poseLandmarks["leftShoulder"]?.position;
+  if (!rightWrist || !leftWrist || !rightShoulder || !leftShoulder) return;
+
+  const shoulderY = (rightShoulder[1] + leftShoulder[1]) / 2;
   const now = Date.now();
 
-  const isBothHandsRaised = rightWristY < shoulderY && leftWristY < shoulderY;
-  if (isBothHandsRaised) {
+  if (rightWrist[1] < shoulderY && leftWrist[1] < shoulderY) {
     return;
   }
 
-  if (rightWristY < shoulderY && now - lastGestureTime.value > debounceTime && currentPage.value < totalPages.value) {
-    nextPage();
-    lastGestureTime.value = now;
-  }
+  const handlePageTurn = (handY, condition, action) => {
+    if (handY < shoulderY && now - lastGestureTime.value > debounceTime) {
+      action();
+      lastGestureTime.value = now;
+    }
+  };
 
-  if (leftWristY < shoulderY && now - lastGestureTime.value > debounceTime && currentPage.value > 1) {
-    prevPage();
-    lastGestureTime.value = now;
-  }
+  handlePageTurn(rightWrist[1], currentPage.value < totalPages.value, nextPage);
+  handlePageTurn(leftWrist[1], currentPage.value > 1, prevPage);
 });
-</script>
 
-<style scoped lang="scss">
-.page-navigation {
-  margin: 15px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.page-navigation button {
-  margin: 0 10px;
-  padding: 5px 10px;
-  font-size: 18px;
-  cursor: pointer;
-}
-</style>
+</script>
