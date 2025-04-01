@@ -43,10 +43,9 @@
 
 
 <script setup lang="ts">
-import { shallowRef, ref, onMounted, watch } from 'vue';
 import type { Ref } from 'vue';
-import { NButton } from 'naive-ui'
-import { pdfjsLib, SimpleLinkService, pdfWorkerLib } from '@/composables/pdfjsLib';
+import { onMounted, ref, shallowRef, watch } from 'vue';
+import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
 import { poseLandmarks } from '@/interface/poseLandmarksInterface';
 import { leftHandLandmarks, rightHandLandmarks } from '@/interface/handLandmarksInterface';
 import { TresCanvas, useRenderLoop } from '@tresjs/core';
@@ -184,32 +183,13 @@ const processLoadingTask = (source: string): void => {
     });
 };
 
-watch(currentPage, async (newValue) => {
-  const pageProxy = await pdfProxy.getPage(newValue);
-  const viewport = pageProxy.getViewport({ scale: 1 });
-  renderText(pageProxy, textLayer.value, viewport);
-  await renderAnnotations(pageProxy, annotationLayer.value, viewport);
-  renderCanvas(pageProxy, canvasLayer.value, viewport);
-});
-
-onMounted(async () => {
-  try {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerLib as any;
-  } catch (e) {
-    window.pdfjsWorker = pdfWorkerLib;
-  }
-  processLoadingTask(pdfSrc);
-});
-
-// 分割線
 const canvas_factor = 2;
-let paused = ref(false);
-
-function pauseView() {
+const paused = ref(false);
+const pauseView = () => {
   paused.value = !paused.value;
 }
 
-function saveLandmarks() {
+const saveLandmarks = () => {
   const landmarks_canvas: any[] = poseLandmarksGroupRef.value.children;
   let landmarks_pose = landmarks_canvas.reduce((accumulator, cur) => {
     accumulator.push({
@@ -225,32 +205,31 @@ function saveLandmarks() {
   });
 }
 
-function poseToCanvasCoord(coord: number, factor: number) {
+const poseToCanvasCoord = (coord: number, factor: number) => {
   // Convert landmarks from pose models coord to views canvas coord
   return 1 - coord * factor;
 }
 
-function CanvasToPoseCoord(coord: number, factor: number) {
+const CanvasToPoseCoord = (coord: number, factor: number) => {
   // Convert landmarks from views canvas coord to models coord cord
   return (1 + coord) / factor;
 }
 
-function getCenter(points: number[][]): { "x": number, "y": number, "z": number } {
+const getCenter = (points: number[][]): { "x": number, "y": number, "z": number } => {
   const pointSum = points.reduce((acc, cur) => {
     acc["x_sum"] += cur[0];
     acc["y_sum"] += cur[1];
     acc["z_sum"] += cur[2];
     return acc;
   }, { "x_sum": 0, "y_sum": 0, "z_sum": 0 });
-  const center = {
+  return {
     x: pointSum["x_sum"] / points.length,
     y: pointSum["y_sum"] / points.length,
     z: pointSum["z_sum"] / points.length,
   };
-  return center;
 }
 
-function smoothing(start: number, end: number, delta: number) {
+const smoothing = (start: number, end: number, delta: number) =>  {
   const speed = Math.min(Math.max(end - start * 2, 7), 10);
   const alpha = 1 - Math.exp(-speed * delta);
   const threshold = 0.3;
@@ -265,8 +244,7 @@ const poseLandmarksGroupRef = shallowRef();
 const leftHandLandmarksGroupRef = shallowRef();
 const rightHandLandmarksGroupRef = shallowRef();
 
-const debounceTime = 3000;
-const lastGestureTime: Ref<number> = ref(0);
+const lastGestureTimestamp = ref(0);
 onLoop(({ delta, elapsed }) => {
   if (paused.value) return;
   if (!poseLandmarksGroupRef.value || !leftHandLandmarksGroupRef.value || !rightHandLandmarksGroupRef.value) return;
@@ -308,21 +286,48 @@ onLoop(({ delta, elapsed }) => {
   if (!rightWrist || !leftWrist || !rightShoulder || !leftShoulder) return;
 
   const shoulderY = (rightShoulder[1] + leftShoulder[1]) / 2;
-  const now = Date.now();
 
   if (rightWrist[1] < shoulderY && leftWrist[1] < shoulderY) {
     return;
   }
 
-  const handlePageTurn = (handY, condition, action) => {
-    if (handY < shoulderY && now - lastGestureTime.value > debounceTime) {
-      action();
-      lastGestureTime.value = now;
+  const isGestureTriggered = ref(false);
+  const debounceTime = 3000;
+  const dynamicThreshold = ref(0.2);
+
+  const handlePageTurn = (handY, action) => {
+    const currentTimestamp = Date.now();
+    const shoulderYDifference = shoulderY - handY;
+    dynamicThreshold.value = Math.max(0.2, shoulderYDifference * 0.1);
+    if (shoulderYDifference > dynamicThreshold.value && currentTimestamp - lastGestureTimestamp.value > debounceTime) {
+      if (!isGestureTriggered.value) {
+        action();
+        lastGestureTimestamp.value = currentTimestamp;
+        isGestureTriggered.value = true;
+      }
+    } else {
+      isGestureTriggered.value = false;
     }
   };
 
-  handlePageTurn(rightWrist[1], currentPage.value < totalPages.value, nextPage);
-  handlePageTurn(leftWrist[1], currentPage.value > 1, prevPage);
+  handlePageTurn(rightWrist[1], nextPage);
+  handlePageTurn(leftWrist[1], prevPage);
 });
 
+watch(currentPage, async (newValue) => {
+  const pageProxy = await pdfProxy.getPage(newValue);
+  const viewport = pageProxy.getViewport({ scale: 1 });
+  renderText(pageProxy, textLayer.value, viewport);
+  await renderAnnotations(pageProxy, annotationLayer.value, viewport);
+  renderCanvas(pageProxy, canvasLayer.value, viewport);
+});
+
+onMounted(async () => {
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerLib as any;
+  } catch (e) {
+    window.pdfjsWorker = pdfWorkerLib;
+  }
+  processLoadingTask(pdfSrc);
+});
 </script>
