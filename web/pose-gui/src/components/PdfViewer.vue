@@ -1,6 +1,5 @@
 <template>
   <div class="flex flex-col w-full h-full">
-    <!-- 按鈕區塊 -->
     <div class="absolute top-0 left-0 w-full h-full">
       <div class="grid grid-cols-1 w-full h-full">
 <!--        <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"-->
@@ -17,7 +16,6 @@
 <!--                :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button>-->
       </div>
     </div>
-    <!-- 3D 渲染畫布 -->
     <TresCanvas class="absolute top-0 left-0 w-full h-full">
       <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
       <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]">
@@ -267,7 +265,7 @@ const poseLandmarksGroupRef = shallowRef();
 const leftHandLandmarksGroupRef = shallowRef();
 const rightHandLandmarksGroupRef = shallowRef();
 
-const debounceTime = 1000;
+const debounceTime = 3000;
 const lastGestureTime: Ref<number> = ref(0);
 onLoop(({ delta, elapsed }) => {
   if (paused.value) return;
