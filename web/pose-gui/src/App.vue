@@ -1,5 +1,5 @@
 <template>
-  <n-layout position="absolute">
+  <n-layout>
     <div>
       <n-tabs type="line" @update:value="handleUpdate" default-value="" v-model:value="currentRouteName" size="large">
         <n-tab name="pose" tab="Pose"></n-tab>
@@ -46,6 +46,6 @@ watch(
 }
 
 .n-layout-content {
-  height: calc(100vh - 53px);
+  height: calc(100vh - var(--header-height));
 }
 </style>

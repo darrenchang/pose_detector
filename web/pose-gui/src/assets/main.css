@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --header-height: 36px;
+  --header-height: 53px;
 }
 .n-layout-header {
   background: rgba(128, 128, 128, 0.2);
