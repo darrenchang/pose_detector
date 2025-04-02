@@ -1,48 +1,64 @@
 <template>
-  <div class="flex flex-col w-full h-full">
-    <div class="absolute top-0 left-0 w-full h-full">
-      <div class="grid grid-cols-1 w-full h-full">
-        <!--        <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"-->
-        <!--                :disabled="currentPage <= 1" @click="prevPage">&larr;</button>-->
-        <div ref="pdfLayersWrapper" class="border-none m-auto"
-             :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
-          <div class="pdf__canvas-layer">
-            <canvas ref="canvasLayer" />
-          </div>
-          <div ref="textLayer" class="pdf__text-layer hidden"></div>
-          <div ref="annotationLayer" class="pdf__annotation-layer"></div>
-        </div>
-        <!--        <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"-->
-        <!--                :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button>-->
-      </div>
+  <n-layout-content>
+    <div class="overlay absolute w-full h-full z-256">
+      <TresCanvas>
+        <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
+        <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]">
+          <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :visible="true" :key="key" :position="[-1, -1, -1]">
+            <TresBoxGeometry :args="landmark.cubeSize" />
+            <TresMeshNormalMaterial :color="landmark.cubeColor" />
+          </TresMesh>
+        </TresGroup>
+        <TresGroup ref="leftHandLandmarksGroupRef" :position="[0, 0, 0]">
+          <TresMesh v-for="(landmark, key) in leftHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
+            <TresBoxGeometry :args="landmark.cubeSize" />
+            <TresMeshNormalMaterial :color="landmark.cubeColor" />
+          </TresMesh>
+        </TresGroup>
+        <TresGroup ref="rightHandLandmarksGroupRef" :position="[0, 0, 0]">
+          <TresMesh v-for="(landmark, key) in rightHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
+            <TresBoxGeometry :args="landmark.cubeSize" />
+            <TresMeshNormalMaterial :color="landmark.cubeColor" />
+          </TresMesh>
+        </TresGroup>
+        <TresAmbientLight :intensity="1" />
+      </TresCanvas>
     </div>
-    <TresCanvas class="absolute top-0 left-0 w-full h-full">
-      <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
-      <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]">
-        <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :visible="false" :key="key" :position="[-1, -1, -1]">
-          <TresBoxGeometry :args="landmark.cubeSize" />
-          <TresMeshNormalMaterial :color="landmark.cubeColor" />
-        </TresMesh>
-      </TresGroup>
-      <TresGroup ref="leftHandLandmarksGroupRef" :position="[0, 0, 0]">
-        <TresMesh v-for="(landmark, key) in leftHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
-          <TresBoxGeometry :args="landmark.cubeSize" />
-          <TresMeshNormalMaterial :color="landmark.cubeColor" />
-        </TresMesh>
-      </TresGroup>
-      <TresGroup ref="rightHandLandmarksGroupRef" :position="[0, 0, 0]">
-        <TresMesh v-for="(landmark, key) in rightHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
-          <TresBoxGeometry :args="landmark.cubeSize" />
-          <TresMeshNormalMaterial :color="landmark.cubeColor" />
-        </TresMesh>
-      </TresGroup>
-      <TresAmbientLight :intensity="1" />
-    </TresCanvas>
-  </div>
+    <n-layout-content>
+      <div class="flex flex-col w-full h-full">
+        <div class="top-0 left-0 w-full h-full">
+          <div class="grid grid-cols-1 w-full h-full">
+                   <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"
+                           :disabled="currentPage <= 1" @click="prevPage">&larr;</button>
+                   <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"
+                           :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button>
+            <div ref="pdfLayersWrapper" class="border-none m-auto"
+                 :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
+              <div class="pdf__canvas-layer">
+                <canvas ref="canvasLayer" />
+              </div>
+              <div ref="textLayer" class="pdf__text-layer hidden"></div>
+              <div ref="annotationLayer" class="pdf__annotation-layer"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </n-layout-content>
+  </n-layout-content>
 </template>
 
+<style scoped>
+.overlay,
+.overlay * {
+  pointer-events: none;
+}
+canvas {
+  pointer-events: none !important;
+}
+</style>
 
 <script setup lang="ts">
+import { NLayoutContent } from 'naive-ui'
 import type { Ref } from 'vue';
 import { onMounted, ref, shallowRef, watch } from 'vue';
 import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
