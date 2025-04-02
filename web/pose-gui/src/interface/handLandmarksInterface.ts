@@ -3,6 +3,7 @@ export interface handLandmarksInterface {
     cubeSize: number[]
     cubeColor: string
     position: number[]
+    exist: boolean
   }
 }
 
@@ -13,106 +14,127 @@ const exampleHandLandmarks: handLandmarksInterface = {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   thumbCmc: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   thumbMcp: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   thumbIp: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   thumbTip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   indexFingerMcp: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   indexFingerPip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   indexFingerDip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   indexFingerTip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   middleFingerMcp: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   middleFingerPip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   middleFingerDip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   middleFingerTip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   ringFingerMcp: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   ringFingerPip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   ringFingerDip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   ringFingerTip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   pinkyMcp: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   pinkyPip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   pinkyDip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
   pinkyTip: {
     cubeColor: 'orage',
     cubeSize: [0.02, 0.02, 0.02],
     position: [0, 0, 0],
+    exist: false,
   },
 }
 

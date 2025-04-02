@@ -15,22 +15,20 @@ export function sub(camId: string) {
 }
 
 socket.on('landmarks', message => {
-  Object.keys(poseLandmarks).forEach((key) => {
-    poseLandmarks[key].position = [0, 0, 0];
-  });
-
-  Object.keys(leftHandLandmarks).forEach((key) => {
-    leftHandLandmarks[key].position = [0, 0, 0];
-  });
-
-  Object.keys(rightHandLandmarks).forEach((key) => {
-    rightHandLandmarks[key].position = [0, 0, 0];
-  });
+  // Object.keys(leftHandLandmarks).forEach((key) => {
+  //   leftHandLandmarks[key].exist = false;
+  // });
+  //
+  // Object.keys(rightHandLandmarks).forEach((key) => {
+  //   rightHandLandmarks[key].exist = false;
+  // });
 
   Object.keys(poseLandmarks).forEach((key, index) => {
     if (message.pose_landmarks.length <= 0) {
+      poseLandmarks[key].exist = false;
       return
     }
+    poseLandmarks[key].exist = true;
     poseLandmarks[key].position = [
       message.pose_landmarks[index]['x'],
       message.pose_landmarks[index]['y'],
@@ -40,8 +38,10 @@ socket.on('landmarks', message => {
   // Hand landmarks
   Object.keys(leftHandLandmarks).forEach((key, index) => {
     if (message.hand_landmarks.left.length <= 0) {
+      leftHandLandmarks[key].exist = false
       return
     }
+    leftHandLandmarks[key].exist = true
     leftHandLandmarks[key].position = [
       message.hand_landmarks.left[index]['x'],
       message.hand_landmarks.left[index]['y'],
@@ -50,8 +50,10 @@ socket.on('landmarks', message => {
   })
   Object.keys(rightHandLandmarks).forEach((key, index) => {
     if (message.hand_landmarks.right.length <= 0) {
+      rightHandLandmarks[key].exist = false
       return
     }
+    rightHandLandmarks[key].exist = true
     rightHandLandmarks[key].position = [
       message.hand_landmarks.right[index]['x'],
       message.hand_landmarks.right[index]['y'],
