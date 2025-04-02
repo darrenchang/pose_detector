@@ -28,10 +28,10 @@
       <div class="flex flex-col w-full h-full">
         <div class="top-0 left-0 w-full h-full">
           <div class="grid grid-cols-1 w-full h-full">
-              <!-- <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2" -->
-              <!--         :disabled="currentPage <= 1" @click="prevPage">&larr;</button> -->
-              <!-- <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2" -->
-              <!--         :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button> -->
+            <!-- <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2" -->
+            <!--         :disabled="currentPage <= 1" @click="prevPage">&larr;</button> -->
+            <!-- <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2" -->
+            <!--         :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button> -->
             <div ref="pdfLayersWrapper" class="border-none m-auto"
                  :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
               <div class="pdf__canvas-layer">
@@ -201,21 +201,6 @@ const canvas_factor = 2;
 const paused = ref(false);
 const pauseView = () => {
   paused.value = !paused.value;
-}
-
-const saveLandmarks = () => {
-  const landmarks_canvas: any[] = poseLandmarksGroupRef.value.children;
-  let landmarks_pose = landmarks_canvas.reduce((accumulator, cur) => {
-    accumulator.push({
-      "x": CanvasToPoseCoord(cur.position.x, canvas_factor),
-      "y": CanvasToPoseCoord(cur.position.y, canvas_factor),
-      "z": CanvasToPoseCoord(cur.position.z, canvas_factor),
-    });
-    return accumulator;
-  }, []);
-  getInfo().then((res) => {
-    console.log(res);
-  });
 }
 
 const poseToCanvasCoord = (coord: number, factor: number) => {
