@@ -270,7 +270,8 @@ onLoop(({ delta, elapsed }) => {
       item.position.x = smoothing(item.position.x, newX, delta);
       item.position.y = smoothing(item.position.y, newY, delta);
       item.position.z = smoothing(item.position.z, newZ, delta);
-      item.visible = landmarks[item.name].exist;
+      const displayConditions = [landmarks[item.name].exist, landmarks[item.name].display]
+      item.visible = displayConditions.every(item => item === true)
     });
   };
   updateLandmarks(poseLandmarksGroupRef, poseLandmarks);
