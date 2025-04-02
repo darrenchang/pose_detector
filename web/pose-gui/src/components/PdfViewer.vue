@@ -28,10 +28,10 @@
       <div class="flex flex-col w-full h-full">
         <div class="top-0 left-0 w-full h-full">
           <div class="grid grid-cols-1 w-full h-full">
-                   <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"
-                           :disabled="currentPage <= 1" @click="prevPage">&larr;</button>
-                   <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"
-                           :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button>
+              <!-- <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2" -->
+              <!--         :disabled="currentPage <= 1" @click="prevPage">&larr;</button> -->
+              <!-- <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2" -->
+              <!--         :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button> -->
             <div ref="pdfLayersWrapper" class="border-none m-auto"
                  :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
               <div class="pdf__canvas-layer">
@@ -139,7 +139,7 @@ const renderAnnotations = async (pdfPageProxy, annotationLayerContainer, viewpor
     const pageIndex = await pdfProxy.getPageIndex(
       annotationLinkId.dest[0]
     );
-    this.currentPage = pageIndex + 1;
+    currentPage.value = pageIndex + 1;
   });
 };
 
@@ -180,8 +180,6 @@ const processLoadingTask = (source: string): void => {
       pdfProxy = doc;
       pdf = doc.loadingTask;
       totalPages.value = doc.numPages;
-      console.log("pdfProxy", pdfProxy);
-      console.log("pdf", pdf);
       return doc.getPage(currentPage.value);
     }, (error) => {
       // PDF loading error
@@ -215,7 +213,6 @@ const saveLandmarks = () => {
     });
     return accumulator;
   }, []);
-  console.log(landmarks_pose);
   getInfo().then((res) => {
     console.log(res);
   });
@@ -260,21 +257,20 @@ const poseLandmarksGroupRef = shallowRef();
 const leftHandLandmarksGroupRef = shallowRef();
 const rightHandLandmarksGroupRef = shallowRef();
 
-const lastGestureTimestamp = ref(0);
 onLoop(({ delta, elapsed }) => {
   if (paused.value) return;
   if (!poseLandmarksGroupRef.value || !leftHandLandmarksGroupRef.value || !rightHandLandmarksGroupRef.value) return;
 
-  const updateLandmarks = (groupRef, landmarks, basePosition = { x: 0, y: 0, z: 0 }) => {
+  const updateLandmarks = (groupRef, landmarks, offsetPosition = { x: 0, y: 0, z: 0 }) => {
     groupRef.value.children.forEach((item) => {
       const landmark = landmarks[item.name].position;
-      const newX = poseToCanvasCoord(basePosition.x + landmark[0], canvas_factor);
-      const newY = poseToCanvasCoord(basePosition.y + landmark[1], canvas_factor);
-      const newZ = poseToCanvasCoord(basePosition.z + landmark[2], canvas_factor);
-
+      const newX = poseToCanvasCoord(offsetPosition.x + landmark[0], canvas_factor);
+      const newY = poseToCanvasCoord(offsetPosition.y + landmark[1], canvas_factor);
+      const newZ = poseToCanvasCoord(offsetPosition.z + landmark[2], canvas_factor);
       item.position.x = smoothing(item.position.x, newX, delta);
       item.position.y = smoothing(item.position.y, newY, delta);
       item.position.z = smoothing(item.position.z, newZ, delta);
+      item.visible = landmarks[item.name].exist;
     });
   };
   updateLandmarks(poseLandmarksGroupRef, poseLandmarks);
@@ -294,42 +290,6 @@ onLoop(({ delta, elapsed }) => {
     poseLandmarks["rightThumb"].position,
   ]);
   updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, rightPalm);
-
-  const getHandRange = (handLandmarks) => {
-    const xValues = Object.values(handLandmarks)
-      .map(l => l.position?.[0] ?? 0);
-    const yValues = Object.values(handLandmarks)
-      .map(l => l.position?.[1] ?? 0);
-    const zValues = Object.values(handLandmarks)
-      .map(l => l.position?.[2] ?? 0);
-    return {
-      minX: Math.min(...xValues), maxX: Math.max(...xValues),
-      minY: Math.min(...yValues), maxY: Math.max(...yValues),
-      minZ: Math.min(...zValues), maxZ: Math.max(...zValues),
-    };
-  };
-
-  const leftHandRange = getHandRange(leftHandLandmarks);
-  const rightHandRange = getHandRange(rightHandLandmarks);
-
-  const debounceTime = 3000;
-  const handlePageTurn = (handRange, xThreshold, action) => {
-    const currentTimestamp = Date.now();
-    const isHandInScreen = handRange.minX !== 0 && (
-      handRange.minY > -0.5 && handRange.maxY < 0.5 &&
-      handRange.minZ > -0.5 && handRange.maxZ < 0.5
-    );
-    const isHandLargeEnough = (handRange.maxX - handRange.minX) > 0.06;
-    const isHandAtSide = xThreshold < 0 ? handRange.maxX < xThreshold + 0.1 : handRange.minX > xThreshold - 0.1;
-    if (isHandInScreen && isHandLargeEnough && isHandAtSide && currentTimestamp - lastGestureTimestamp.value > debounceTime) {
-      action();
-      lastGestureTimestamp.value = currentTimestamp;
-    }
-  };
-  console.log(leftHandRange);
-  console.log(rightHandRange);
-  handlePageTurn(leftHandRange, -0.02, prevPage);
-  handlePageTurn(rightHandRange, 0.02, nextPage);
 });
 
 watch(currentPage, async (newValue) => {
