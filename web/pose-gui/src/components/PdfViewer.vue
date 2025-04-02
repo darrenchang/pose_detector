@@ -65,7 +65,6 @@ import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLi
 import { poseLandmarks } from '@/interface/poseLandmarksInterface';
 import { leftHandLandmarks, rightHandLandmarks } from '@/interface/handLandmarksInterface';
 import { TresCanvas, useRenderLoop } from '@tresjs/core';
-import { getInfo } from '@/composables/restApiService';
 
 const pdfLayersWrapper: Ref<any> = ref(null);
 const canvasLayer: Ref<any> = ref(null);
@@ -238,6 +237,20 @@ const smoothing = (start: number, end: number, delta: number) =>  {
   }
 }
 
+const updateLandmarks = (groupRef, landmarks, delta, offsetPosition = { x: 0, y: 0, z: 0 }) => {
+  groupRef.value.children.forEach((item) => {
+    const landmark = landmarks[item.name].position;
+    const newX = poseToCanvasCoord(offsetPosition.x + landmark[0], canvas_factor);
+    const newY = poseToCanvasCoord(offsetPosition.y + landmark[1], canvas_factor);
+    const newZ = poseToCanvasCoord(offsetPosition.z + landmark[2], canvas_factor);
+    item.position.x = smoothing(item.position.x, newX, delta);
+    item.position.y = smoothing(item.position.y, newY, delta);
+    item.position.z = smoothing(item.position.z, newZ, delta);
+    const displayConditions = [landmarks[item.name].exist, landmarks[item.name].display]
+    item.visible = displayConditions.every(item => item === true)
+  });
+};
+
 const poseLandmarksGroupRef = shallowRef();
 const leftHandLandmarksGroupRef = shallowRef();
 const rightHandLandmarksGroupRef = shallowRef();
@@ -246,20 +259,7 @@ onLoop(({ delta, elapsed }) => {
   if (paused.value) return;
   if (!poseLandmarksGroupRef.value || !leftHandLandmarksGroupRef.value || !rightHandLandmarksGroupRef.value) return;
 
-  const updateLandmarks = (groupRef, landmarks, offsetPosition = { x: 0, y: 0, z: 0 }) => {
-    groupRef.value.children.forEach((item) => {
-      const landmark = landmarks[item.name].position;
-      const newX = poseToCanvasCoord(offsetPosition.x + landmark[0], canvas_factor);
-      const newY = poseToCanvasCoord(offsetPosition.y + landmark[1], canvas_factor);
-      const newZ = poseToCanvasCoord(offsetPosition.z + landmark[2], canvas_factor);
-      item.position.x = smoothing(item.position.x, newX, delta);
-      item.position.y = smoothing(item.position.y, newY, delta);
-      item.position.z = smoothing(item.position.z, newZ, delta);
-      const displayConditions = [landmarks[item.name].exist, landmarks[item.name].display]
-      item.visible = displayConditions.every(item => item === true)
-    });
-  };
-  updateLandmarks(poseLandmarksGroupRef, poseLandmarks);
+  updateLandmarks(poseLandmarksGroupRef, poseLandmarks, delta);
 
   const leftPalm = getCenter([
     poseLandmarks["leftWrist"].position,
@@ -267,7 +267,7 @@ onLoop(({ delta, elapsed }) => {
     poseLandmarks["leftIndex"].position,
     poseLandmarks["leftThumb"].position,
   ]);
-  updateLandmarks(leftHandLandmarksGroupRef, leftHandLandmarks, leftPalm);
+  updateLandmarks(leftHandLandmarksGroupRef, leftHandLandmarks, delta, leftPalm);
 
   const rightPalm = getCenter([
     poseLandmarks["rightWrist"].position,
@@ -275,7 +275,7 @@ onLoop(({ delta, elapsed }) => {
     poseLandmarks["rightIndex"].position,
     poseLandmarks["rightThumb"].position,
   ]);
-  updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, rightPalm);
+  updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, delta, rightPalm);
 });
 
 watch(currentPage, async (newValue) => {
