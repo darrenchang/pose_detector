@@ -2,8 +2,8 @@
   <div class="flex flex-col w-full h-full">
     <div class="absolute top-0 left-0 w-full h-full">
       <div class="grid grid-cols-1 w-full h-full">
-<!--        <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"-->
-<!--                :disabled="currentPage <= 1" @click="prevPage">&larr;</button>-->
+        <!--        <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"-->
+        <!--                :disabled="currentPage <= 1" @click="prevPage">&larr;</button>-->
         <div ref="pdfLayersWrapper" class="border-none m-auto"
              :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
           <div class="pdf__canvas-layer">
@@ -12,8 +12,8 @@
           <div ref="textLayer" class="pdf__text-layer hidden"></div>
           <div ref="annotationLayer" class="pdf__annotation-layer"></div>
         </div>
-<!--        <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"-->
-<!--                :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button>-->
+        <!--        <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2"-->
+        <!--                :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button>-->
       </div>
     </div>
     <TresCanvas class="absolute top-0 left-0 w-full h-full">
@@ -255,12 +255,12 @@ onLoop(({ delta, elapsed }) => {
       const newX = poseToCanvasCoord(basePosition.x + landmark[0], canvas_factor);
       const newY = poseToCanvasCoord(basePosition.y + landmark[1], canvas_factor);
       const newZ = poseToCanvasCoord(basePosition.z + landmark[2], canvas_factor);
+
       item.position.x = smoothing(item.position.x, newX, delta);
       item.position.y = smoothing(item.position.y, newY, delta);
       item.position.z = smoothing(item.position.z, newZ, delta);
     });
   };
-
   updateLandmarks(poseLandmarksGroupRef, poseLandmarks);
 
   const leftPalm = getCenter([
@@ -279,39 +279,41 @@ onLoop(({ delta, elapsed }) => {
   ]);
   updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, rightPalm);
 
-  const rightWrist = poseLandmarks["rightWrist"]?.position;
-  const leftWrist = poseLandmarks["leftWrist"]?.position;
-  const rightShoulder = poseLandmarks["rightShoulder"]?.position;
-  const leftShoulder = poseLandmarks["leftShoulder"]?.position;
-  if (!rightWrist || !leftWrist || !rightShoulder || !leftShoulder) return;
-
-  const shoulderY = (rightShoulder[1] + leftShoulder[1]) / 2;
-
-  if (rightWrist[1] < shoulderY && leftWrist[1] < shoulderY) {
-    return;
-  }
-
-  const isGestureTriggered = ref(false);
-  const debounceTime = 3000;
-  const dynamicThreshold = ref(0.2);
-
-  const handlePageTurn = (handY, action) => {
-    const currentTimestamp = Date.now();
-    const shoulderYDifference = shoulderY - handY;
-    dynamicThreshold.value = Math.max(0.2, shoulderYDifference * 0.1);
-    if (shoulderYDifference > dynamicThreshold.value && currentTimestamp - lastGestureTimestamp.value > debounceTime) {
-      if (!isGestureTriggered.value) {
-        action();
-        lastGestureTimestamp.value = currentTimestamp;
-        isGestureTriggered.value = true;
-      }
-    } else {
-      isGestureTriggered.value = false;
-    }
+  const getHandRange = (handLandmarks) => {
+    const xValues = Object.values(handLandmarks)
+      .map(l => l.position?.[0] ?? 0);
+    const yValues = Object.values(handLandmarks)
+      .map(l => l.position?.[1] ?? 0);
+    const zValues = Object.values(handLandmarks)
+      .map(l => l.position?.[2] ?? 0);
+    return {
+      minX: Math.min(...xValues), maxX: Math.max(...xValues),
+      minY: Math.min(...yValues), maxY: Math.max(...yValues),
+      minZ: Math.min(...zValues), maxZ: Math.max(...zValues),
+    };
   };
 
-  handlePageTurn(rightWrist[1], nextPage);
-  handlePageTurn(leftWrist[1], prevPage);
+  const leftHandRange = getHandRange(leftHandLandmarks);
+  const rightHandRange = getHandRange(rightHandLandmarks);
+
+  const debounceTime = 3000;
+  const handlePageTurn = (handRange, xThreshold, action) => {
+    const currentTimestamp = Date.now();
+    const isHandInScreen = handRange.minX !== 0 && (
+      handRange.minY > -0.5 && handRange.maxY < 0.5 &&
+      handRange.minZ > -0.5 && handRange.maxZ < 0.5
+    );
+    const isHandLargeEnough = (handRange.maxX - handRange.minX) > 0.06;
+    const isHandAtSide = xThreshold < 0 ? handRange.maxX < xThreshold + 0.1 : handRange.minX > xThreshold - 0.1;
+    if (isHandInScreen && isHandLargeEnough && isHandAtSide && currentTimestamp - lastGestureTimestamp.value > debounceTime) {
+      action();
+      lastGestureTimestamp.value = currentTimestamp;
+    }
+  };
+  console.log(leftHandRange);
+  console.log(rightHandRange);
+  handlePageTurn(leftHandRange, -0.02, prevPage);
+  handlePageTurn(rightHandRange, 0.02, nextPage);
 });
 
 watch(currentPage, async (newValue) => {
