@@ -1,6 +1,9 @@
 <template>
   <n-layout-content>
     <div class="overlay absolute w-full h-full z-256">
+      {{dwellTimer.nextPage}} <br>
+      {{dwellTimer.prevPage}} <br>
+      {{currentPage}}
       <TresCanvas>
         <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
         <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]">
@@ -74,11 +77,33 @@ const pdfSrc: string = 'https://pdfobject.com/pdf/pdf_open_parameters_acro8.pdf'
 let pdfProxy = undefined;
 let pdf = undefined;
 const { onLoop } = useRenderLoop();
-
 const currentPage: Ref<number> = ref(1);
 const totalPages: Ref<number> = ref(3);
 const pdfWidth: Ref<number> = ref(0);
 const pdfHeight: Ref<number> = ref(0);
+interface dwellTimerData {
+  "nextPage": {
+    currentAccTime: number
+    triggerTime: number
+  },
+  "prevPage": {
+    currentAccTime: number
+    triggerTime: number
+  }
+
+}
+const dwellTimer: Ref<dwellTimerData> = ref({
+  nextPage: {
+    currentAccTime: 0,
+    triggerTime: 1,
+  },
+  prevPage: {
+    currentAccTime: 0,
+    triggerTime: 1,
+  }
+})
+
+
 const nextPage = () => {
   if(currentPage.value < totalPages.value) {
     currentPage.value++;
@@ -251,6 +276,53 @@ const updateLandmarks = (groupRef, landmarks, delta, offsetPosition = { x: 0, y:
   });
 };
 
+// Dwell activation methods
+const pageTurnDwellCheck = (action: String, _dwellTimer, delta: number) => {
+  const nose = poseLandmarksGroupRef.value.children.reduce((acc, cur) => {
+    if (cur.name === "nose" && cur.visible) {
+      acc = cur
+      return acc
+    }
+    return acc
+  }, undefined)
+  let hand = undefined
+  let pageTurnFunction = nextPage
+  if (action === "nextPage") {
+    pageTurnFunction = nextPage
+    hand = rightHandLandmarksGroupRef
+  }
+  else if (action === "prevPage") {
+    pageTurnFunction = prevPage
+    hand = leftHandLandmarksGroupRef
+  }
+  // Exit the function if no dwell check can be done
+  if (hand.value.children[0].visible === false || hand === undefined || nose === undefined) {
+    _dwellTimer.currentAccTime = 0
+    return
+  }
+
+  const handLandmarkPositions = hand.value.children.reduce((positions, cur) => {
+    positions.push([
+    cur.position["x"],
+    cur.position["y"],
+    cur.position["z"],
+    ])
+    return positions
+  }, [])
+  const handLandmarkCenter = getCenter(handLandmarkPositions)
+  const isInZone = handLandmarkCenter.y > nose.position.y
+  if (isInZone) {
+    _dwellTimer.currentAccTime += delta
+  }
+  else {
+    _dwellTimer.currentAccTime = 0
+  }
+  if (_dwellTimer.currentAccTime > _dwellTimer.triggerTime) {
+    pageTurnFunction()
+    _dwellTimer.currentAccTime = 0
+  }
+}
+
 const poseLandmarksGroupRef = shallowRef();
 const leftHandLandmarksGroupRef = shallowRef();
 const rightHandLandmarksGroupRef = shallowRef();
@@ -261,21 +333,24 @@ onLoop(({ delta, elapsed }) => {
 
   updateLandmarks(poseLandmarksGroupRef, poseLandmarks, delta);
 
-  const leftPalm = getCenter([
+  const leftPalmOffset = getCenter([
     poseLandmarks["leftWrist"].position,
     poseLandmarks["leftPinky"].position,
     poseLandmarks["leftIndex"].position,
     poseLandmarks["leftThumb"].position,
   ]);
-  updateLandmarks(leftHandLandmarksGroupRef, leftHandLandmarks, delta, leftPalm);
+  updateLandmarks(leftHandLandmarksGroupRef, leftHandLandmarks, delta, leftPalmOffset);
 
-  const rightPalm = getCenter([
+  const rightPalmOffset = getCenter([
     poseLandmarks["rightWrist"].position,
     poseLandmarks["rightPinky"].position,
     poseLandmarks["rightIndex"].position,
     poseLandmarks["rightThumb"].position,
   ]);
-  updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, delta, rightPalm);
+  updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, delta, rightPalmOffset);
+  // Check dwell activation
+  pageTurnDwellCheck("nextPage", dwellTimer.value.nextPage, delta)
+  pageTurnDwellCheck("prevPage", dwellTimer.value.prevPage, delta)
 });
 
 watch(currentPage, async (newValue) => {
