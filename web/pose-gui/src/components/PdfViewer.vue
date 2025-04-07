@@ -3,7 +3,9 @@
     <div class="overlay absolute w-full h-full z-256">
       {{dwellTimer.nextPage}} <br>
       {{dwellTimer.prevPage}} <br>
-      {{currentPage}}
+      {{currentPage}} <br>
+      {{ nextProgress }} <br>
+      {{ prevProgress}}
       <TresCanvas>
         <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
         <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]">
@@ -28,42 +30,30 @@
       </TresCanvas>
     </div>
     <n-layout-content>
-      <div class="flex flex-col w-full h-full">
-        <div class="top-0 left-0 w-full h-full">
-          <div class="grid grid-cols-1 w-full h-full">
-            <!-- <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2" -->
-            <!--         :disabled="currentPage <= 1" @click="prevPage">&larr;</button> -->
-            <!-- <button class="bg-gray-800 text-white px-4 py-2 rounded-md mx-2" -->
-            <!--         :disabled="currentPage >= totalPages" @click="nextPage">&rarr;</button> -->
-            <div ref="pdfLayersWrapper" class="border-none m-auto"
-                 :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
-              <div class="pdf__canvas-layer">
-                <canvas ref="canvasLayer" />
-              </div>
-              <div ref="textLayer" class="pdf__text-layer hidden"></div>
-              <div ref="annotationLayer" class="pdf__annotation-layer"></div>
-            </div>
+      <div class="grid grid-cols-6">
+        <div class="flex justify-center items-center">
+          <n-progress type="circle" :percentage="prevProgress"/>
+        </div>
+        <div ref="pdfLayersWrapper" class="border-none m-auto col-span-4"
+             :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
+          <div class="pdf__canvas-layer">
+            <canvas ref="canvasLayer" />
           </div>
+          <div ref="textLayer" class="pdf__text-layer hidden"></div>
+          <div ref="annotationLayer" class="pdf__annotation-layer"></div>
+        </div>
+        <div class="flex justify-center items-center">
+          <n-progress type="circle" :percentage="nextProgress"/>
         </div>
       </div>
     </n-layout-content>
   </n-layout-content>
 </template>
 
-<style scoped>
-.overlay,
-.overlay * {
-  pointer-events: none;
-}
-canvas {
-  pointer-events: none !important;
-}
-</style>
-
 <script setup lang="ts">
-import { NLayoutContent } from 'naive-ui'
-import type { Ref } from 'vue';
-import { onMounted, ref, shallowRef, watch } from 'vue';
+import { NLayoutContent, NProgress } from 'naive-ui';
+import type { Ref, ComputedRef } from 'vue';
+import { computed, onMounted, ref, shallowRef, watch } from 'vue';
 import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
 import { poseLandmarks } from '@/interface/poseLandmarksInterface';
 import { leftHandLandmarks, rightHandLandmarks } from '@/interface/handLandmarksInterface';
@@ -114,6 +104,13 @@ const prevPage = () => {
     currentPage.value--;
   }
 };
+
+const getProgress = (timer):number => {
+  const progress = Math.floor(timer * 100 / 10) * 10;
+  return progress >= 80 ? 100 : progress;
+}
+const nextProgress:ComputedRef<number> = computed(() => getProgress(dwellTimer.value.nextPage.currentAccTime));
+const prevProgress:ComputedRef<number> = computed(() => getProgress(dwellTimer.value.prevPage.currentAccTime));
 
 const getAnnotations = async (pageProxy): Promise<any> => {
   return await pageProxy.getAnnotations({ intent: "display" });
@@ -370,3 +367,13 @@ onMounted(async () => {
   processLoadingTask(pdfSrc);
 });
 </script>
+<style scoped>
+.overlay,
+.overlay * {
+  pointer-events: none;
+}
+canvas {
+  pointer-events: none !important;
+}
+</style>
+
