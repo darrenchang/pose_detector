@@ -32,7 +32,7 @@
     <n-layout-content>
       <div class="grid grid-cols-6">
         <div class="flex justify-center items-center">
-          <n-progress type="circle" :percentage="prevProgress"/>
+          <n-progress type="circle" :percentage="prevProgress" :color="dwellTimer.prevPage.progressColor"/>
         </div>
         <div ref="pdfLayersWrapper" class="border-none m-auto col-span-4"
              :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
@@ -43,7 +43,7 @@
           <div ref="annotationLayer" class="pdf__annotation-layer"></div>
         </div>
         <div class="flex justify-center items-center">
-          <n-progress type="circle" :percentage="nextProgress"/>
+          <n-progress type="circle" :percentage="nextProgress" :color="dwellTimer.nextPage.progressColor"/>
         </div>
       </div>
     </n-layout-content>
@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { NLayoutContent, NProgress } from 'naive-ui';
 import type { Ref, ComputedRef } from 'vue';
-import { computed, onMounted, ref, shallowRef, watch } from 'vue';
+import { computed, onMounted, ref, shallowRef, watch, watchEffect } from 'vue';
 import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
 import { poseLandmarks } from '@/interface/poseLandmarksInterface';
 import { leftHandLandmarks, rightHandLandmarks } from '@/interface/handLandmarksInterface';
@@ -75,10 +75,12 @@ interface dwellTimerData {
   "nextPage": {
     currentAccTime: number
     triggerTime: number
+    progressColor: string
   },
   "prevPage": {
     currentAccTime: number
     triggerTime: number
+    progressColor: string
   }
 
 }
@@ -86,10 +88,12 @@ const dwellTimer: Ref<dwellTimerData> = ref({
   nextPage: {
     currentAccTime: 0,
     triggerTime: 1,
+    progressColor: '#007bff',
   },
   prevPage: {
     currentAccTime: 0,
     triggerTime: 1,
+    progressColor: '#007bff',
   }
 })
 
@@ -106,11 +110,14 @@ const prevPage = () => {
 };
 
 const getProgress = (timer):number => {
-  const progress = Math.floor(timer * 100 / 10) * 10;
+  const progress:number = Math.floor(timer * 100 / 10) * 10;
   return progress >= 80 ? 100 : progress;
 }
-const nextProgress:ComputedRef<number> = computed(() => getProgress(dwellTimer.value.nextPage.currentAccTime));
-const prevProgress:ComputedRef<number> = computed(() => getProgress(dwellTimer.value.prevPage.currentAccTime));
+const nextProgress: ComputedRef<number> = computed(() => getProgress(dwellTimer.value.nextPage.currentAccTime));
+const prevProgress: ComputedRef<number> = computed(() => getProgress(dwellTimer.value.prevPage.currentAccTime));
+const updateProgressColor = (page: dwellTimerData["nextPage"] | dwellTimerData["prevPage"], progressValue: number): void => {
+  page.progressColor = (progressValue === 100) ? '#27bd01' : '#007bff';
+};
 
 const getAnnotations = async (pageProxy): Promise<any> => {
   return await pageProxy.getAnnotations({ intent: "display" });
@@ -356,6 +363,11 @@ watch(currentPage, async (newValue) => {
   renderText(pageProxy, textLayer.value, viewport);
   await renderAnnotations(pageProxy, annotationLayer.value, viewport);
   renderCanvas(pageProxy, canvasLayer.value, viewport);
+});
+
+watchEffect(() => {
+  updateProgressColor(dwellTimer.value.nextPage, nextProgress.value);
+  updateProgressColor(dwellTimer.value.prevPage, prevProgress.value);
 });
 
 onMounted(async () => {
