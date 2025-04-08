@@ -1,32 +1,32 @@
 <template>
   <n-layout-content>
     <div class="overlay absolute w-full h-full z-256">
-      {{dwellTimer.nextPage}} <br>
-      {{dwellTimer.prevPage}} <br>
-      {{currentPage}} <br>
+      {{ dwellTimer.nextPage }} <br>
+      {{ dwellTimer.prevPage }} <br>
+      {{ currentPage }} <br>
       {{ nextProgress }} <br>
-      {{ prevProgress}}
+      {{ prevProgress }}
       <TresCanvas>
-        <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]" />
-        <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]">
-          <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :visible="true" :key="key" :position="[-1, -1, -1]">
-            <TresBoxGeometry :args="landmark.cubeSize" />
-            <TresMeshNormalMaterial :color="landmark.cubeColor" />
+        <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]"/>
+        <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]" :visible="false">
+          <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
+            <TresBoxGeometry :args="landmark.cubeSize"/>
+            <TresMeshNormalMaterial :color="landmark.cubeColor"/>
           </TresMesh>
         </TresGroup>
         <TresGroup ref="leftHandLandmarksGroupRef" :position="[0, 0, 0]">
           <TresMesh v-for="(landmark, key) in leftHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
-            <TresBoxGeometry :args="landmark.cubeSize" />
-            <TresMeshNormalMaterial :color="landmark.cubeColor" />
+            <TresBoxGeometry :args="landmark.cubeSize"/>
+            <TresMeshNormalMaterial :color="landmark.cubeColor"/>
           </TresMesh>
         </TresGroup>
         <TresGroup ref="rightHandLandmarksGroupRef" :position="[0, 0, 0]">
           <TresMesh v-for="(landmark, key) in rightHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
-            <TresBoxGeometry :args="landmark.cubeSize" />
-            <TresMeshNormalMaterial :color="landmark.cubeColor" />
+            <TresBoxGeometry :args="landmark.cubeSize"/>
+            <TresMeshNormalMaterial :color="landmark.cubeColor"/>
           </TresMesh>
         </TresGroup>
-        <TresAmbientLight :intensity="1" />
+        <TresAmbientLight :intensity="1"/>
       </TresCanvas>
     </div>
     <n-layout-content>
@@ -37,7 +37,7 @@
         <div ref="pdfLayersWrapper" class="border-none m-auto col-span-4"
              :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
           <div class="pdf__canvas-layer">
-            <canvas ref="canvasLayer" />
+            <canvas ref="canvasLayer"/>
           </div>
           <div ref="textLayer" class="pdf__text-layer hidden"></div>
           <div ref="annotationLayer" class="pdf__annotation-layer"></div>
@@ -71,6 +71,7 @@ const currentPage: Ref<number> = ref(1);
 const totalPages: Ref<number> = ref(3);
 const pdfWidth: Ref<number> = ref(0);
 const pdfHeight: Ref<number> = ref(0);
+
 interface dwellTimerData {
   "nextPage": {
     currentAccTime: number
@@ -84,6 +85,7 @@ interface dwellTimerData {
   }
 
 }
+
 const dwellTimer: Ref<dwellTimerData> = ref({
   nextPage: {
     currentAccTime: 0,
@@ -95,7 +97,7 @@ const dwellTimer: Ref<dwellTimerData> = ref({
     triggerTime: 1,
     progressColor: '#007bff',
   }
-})
+});
 
 
 const nextPage = () => {
@@ -109,10 +111,10 @@ const prevPage = () => {
   }
 };
 
-const getProgress = (timer):number => {
-  const progress:number = Math.floor(timer * 100 / 10) * 10;
+const getProgress = (timer): number => {
+  const progress: number = Math.floor(timer * 100 / 10) * 10;
   return progress >= 80 ? 100 : progress;
-}
+};
 const nextProgress: ComputedRef<number> = computed(() => getProgress(dwellTimer.value.nextPage.currentAccTime));
 const prevProgress: ComputedRef<number> = computed(() => getProgress(dwellTimer.value.prevPage.currentAccTime));
 const updateProgressColor = (page: dwellTimerData["nextPage"] | dwellTimerData["prevPage"], progressValue: number): void => {
@@ -229,17 +231,17 @@ const canvas_factor = 2;
 const paused = ref(false);
 const pauseView = () => {
   paused.value = !paused.value;
-}
+};
 
 const poseToCanvasCoord = (coord: number, factor: number) => {
   // Convert landmarks from pose models coord to views canvas coord
   return 1 - coord * factor;
-}
+};
 
 const CanvasToPoseCoord = (coord: number, factor: number) => {
   // Convert landmarks from views canvas coord to models coord cord
   return (1 + coord) / factor;
-}
+};
 
 const getCenter = (points: number[][]): { "x": number, "y": number, "z": number } => {
   const pointSum = points.reduce((acc, cur) => {
@@ -253,9 +255,9 @@ const getCenter = (points: number[][]): { "x": number, "y": number, "z": number 
     y: pointSum["y_sum"] / points.length,
     z: pointSum["z_sum"] / points.length,
   };
-}
+};
 
-const smoothing = (start: number, end: number, delta: number) =>  {
+const smoothing = (start: number, end: number, delta: number) => {
   const speed = Math.min(Math.max(end - start * 2, 7), 10);
   const alpha = 1 - Math.exp(-speed * delta);
   const threshold = 0.3;
@@ -264,7 +266,7 @@ const smoothing = (start: number, end: number, delta: number) =>  {
   } else {
     return start + (end - start) * alpha;
   }
-}
+};
 
 const updateLandmarks = (groupRef, landmarks, delta, offsetPosition = { x: 0, y: 0, z: 0 }) => {
   groupRef.value.children.forEach((item) => {
@@ -275,65 +277,63 @@ const updateLandmarks = (groupRef, landmarks, delta, offsetPosition = { x: 0, y:
     item.position.x = smoothing(item.position.x, newX, delta);
     item.position.y = smoothing(item.position.y, newY, delta);
     item.position.z = smoothing(item.position.z, newZ, delta);
-    const displayConditions = [landmarks[item.name].exist, landmarks[item.name].display]
-    item.visible = displayConditions.every(item => item === true)
+    const displayConditions = [landmarks[item.name].exist, landmarks[item.name].display];
+    item.visible = displayConditions.every(item => item === true);
   });
 };
 
 // Dwell activation methods
 const pageTurnDwellCheck = (action: String, _dwellTimer, delta: number) => {
   const nose = poseLandmarksGroupRef.value.children.reduce((acc, cur) => {
-    if (cur.name === "nose" && cur.visible) {
-      acc = cur
-      return acc
+    if(cur.name === "nose" && cur.visible) {
+      acc = cur;
+      return acc;
     }
-    return acc
-  }, undefined)
-  let hand = undefined
-  let pageTurnFunction = nextPage
-  if (action === "nextPage") {
-    pageTurnFunction = nextPage
-    hand = rightHandLandmarksGroupRef
-  }
-  else if (action === "prevPage") {
-    pageTurnFunction = prevPage
-    hand = leftHandLandmarksGroupRef
+    return acc;
+  }, undefined);
+  let hand = undefined;
+  let pageTurnFunction = nextPage;
+  if(action === "nextPage") {
+    pageTurnFunction = nextPage;
+    hand = rightHandLandmarksGroupRef;
+  } else if(action === "prevPage") {
+    pageTurnFunction = prevPage;
+    hand = leftHandLandmarksGroupRef;
   }
   // Exit the function if no dwell check can be done
-  if (hand.value.children[0].visible === false || hand === undefined || nose === undefined) {
-    _dwellTimer.currentAccTime = 0
-    return
+  if(hand.value.children[0].visible === false || hand === undefined || nose === undefined) {
+    _dwellTimer.currentAccTime = 0;
+    return;
   }
 
   const handLandmarkPositions = hand.value.children.reduce((positions, cur) => {
     positions.push([
-    cur.position["x"],
-    cur.position["y"],
-    cur.position["z"],
-    ])
-    return positions
-  }, [])
-  const handLandmarkCenter = getCenter(handLandmarkPositions)
-  const isInZone = handLandmarkCenter.y > nose.position.y
-  if (isInZone) {
-    _dwellTimer.currentAccTime += delta
+      cur.position["x"],
+      cur.position["y"],
+      cur.position["z"],
+    ]);
+    return positions;
+  }, []);
+  const handLandmarkCenter = getCenter(handLandmarkPositions);
+  const isInZone = handLandmarkCenter.y > nose.position.y;
+  if(isInZone) {
+    _dwellTimer.currentAccTime += delta;
+  } else {
+    _dwellTimer.currentAccTime = 0;
   }
-  else {
-    _dwellTimer.currentAccTime = 0
+  if(_dwellTimer.currentAccTime > _dwellTimer.triggerTime) {
+    pageTurnFunction();
+    _dwellTimer.currentAccTime = 0;
   }
-  if (_dwellTimer.currentAccTime > _dwellTimer.triggerTime) {
-    pageTurnFunction()
-    _dwellTimer.currentAccTime = 0
-  }
-}
+};
 
 const poseLandmarksGroupRef = shallowRef();
 const leftHandLandmarksGroupRef = shallowRef();
 const rightHandLandmarksGroupRef = shallowRef();
 
 onLoop(({ delta, elapsed }) => {
-  if (paused.value) return;
-  if (!poseLandmarksGroupRef.value || !leftHandLandmarksGroupRef.value || !rightHandLandmarksGroupRef.value) return;
+  if(paused.value) return;
+  if(!poseLandmarksGroupRef.value || !leftHandLandmarksGroupRef.value || !rightHandLandmarksGroupRef.value) return;
 
   updateLandmarks(poseLandmarksGroupRef, poseLandmarks, delta);
 
@@ -353,8 +353,8 @@ onLoop(({ delta, elapsed }) => {
   ]);
   updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, delta, rightPalmOffset);
   // Check dwell activation
-  pageTurnDwellCheck("nextPage", dwellTimer.value.nextPage, delta)
-  pageTurnDwellCheck("prevPage", dwellTimer.value.prevPage, delta)
+  pageTurnDwellCheck("nextPage", dwellTimer.value.nextPage, delta);
+  pageTurnDwellCheck("prevPage", dwellTimer.value.prevPage, delta);
 });
 
 watch(currentPage, async (newValue) => {
@@ -384,6 +384,7 @@ onMounted(async () => {
 .overlay * {
   pointer-events: none;
 }
+
 canvas {
   pointer-events: none !important;
 }
