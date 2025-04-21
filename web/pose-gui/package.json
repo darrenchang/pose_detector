@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@tresjs/core": "^4.3.1",
-    "@tailwindcss/vite": "^4.0.17",
+    "@tailwindcss/vite": "^4.1.4",
     "axios": "^1.7.9",
     "axios-concurrency": "^1.0.4",
     "axios-rate-limit": "^1.4.0",
@@ -28,7 +28,7 @@
     "swagger-ui-dist": "^5.18.2",
     "sass": "^1.26.5",
     "three": "^0.171.0",
-    "tailwindcss": "^4.0.17",
+    "tailwindcss": "^4.1.4",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5"
   },
