@@ -1,11 +1,11 @@
 <template>
   <n-layout-content>
     <div class="overlay absolute w-full h-full z-256">
-      {{ dwellTimer.nextPage }} <br>
-      {{ dwellTimer.prevPage }} <br>
-      {{ currentPage }} <br>
-      {{ nextProgress }} <br>
-      {{ prevProgress }}
+      <!-- {{ dwellTimer.nextPage }} <br> -->
+      <!-- {{ dwellTimer.prevPage }} <br> -->
+      <!-- {{ currentPage }} <br> -->
+      <!-- {{ nextProgress }} <br> -->
+      <!-- {{ prevProgress }} -->
       <TresCanvas>
         <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]"/>
         <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]" :visible="false">
@@ -32,7 +32,11 @@
     <n-layout-content>
       <div class="grid grid-cols-6">
         <div class="flex justify-center items-center">
-          <n-progress type="circle" :percentage="prevProgress" :color="dwellTimer.prevPage.progressColor"/>
+          <n-progress class="fast-progress" type="circle" :percentage="prevProgress" :color="dwellTimer.prevPage.progressColor">
+            <div style="text-align: center">
+              Previous Page
+            </div>
+          </n-progress>
         </div>
         <div ref="pdfLayersWrapper" class="border-none m-auto col-span-4"
              :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
@@ -43,7 +47,11 @@
           <div ref="annotationLayer" class="pdf__annotation-layer"></div>
         </div>
         <div class="flex justify-center items-center">
-          <n-progress type="circle" :percentage="nextProgress" :color="dwellTimer.nextPage.progressColor"/>
+          <n-progress class="fast-progress" type="circle" :percentage="nextProgress" :color="dwellTimer.nextPage.progressColor">
+            <div style="text-align: center">
+              Next Page
+            </div>
+          </n-progress>
         </div>
       </div>
     </n-layout-content>
@@ -89,12 +97,12 @@ interface dwellTimerData {
 const dwellTimer: Ref<dwellTimerData> = ref({
   nextPage: {
     currentAccTime: 0,
-    triggerTime: 1,
+    triggerTime: 3,
     progressColor: '#007bff',
   },
   prevPage: {
     currentAccTime: 0,
-    triggerTime: 1,
+    triggerTime: 3,
     progressColor: '#007bff',
   }
 });
@@ -111,12 +119,20 @@ const prevPage = () => {
   }
 };
 
-const getProgress = (timer): number => {
-  const progress: number = Math.floor(timer * 100 / 10) * 10;
-  return progress >= 80 ? 100 : progress;
+const getProgress = (timer, triggerTime): number => {
+  const progressStep = 3
+  const snapStep = (Math.floor(100 / progressStep) - 2) * progressStep
+  const progress: number = Math.floor(timer * 100 / (triggerTime * progressStep)) * progressStep;
+  return progress >= snapStep ? 100 : progress;
 };
-const nextProgress: ComputedRef<number> = computed(() => getProgress(dwellTimer.value.nextPage.currentAccTime));
-const prevProgress: ComputedRef<number> = computed(() => getProgress(dwellTimer.value.prevPage.currentAccTime));
+const nextProgress: ComputedRef<number> = computed(() => getProgress(
+  dwellTimer.value.nextPage.currentAccTime,
+  dwellTimer.value.nextPage.triggerTime,
+));
+const prevProgress: ComputedRef<number> = computed(() => getProgress(
+  dwellTimer.value.prevPage.currentAccTime,
+  dwellTimer.value.prevPage.triggerTime,
+));
 const updateProgressColor = (page: dwellTimerData["nextPage"] | dwellTimerData["prevPage"], progressValue: number): void => {
   page.progressColor = (progressValue === 100) ? '#27bd01' : '#007bff';
 };
