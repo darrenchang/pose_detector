@@ -1,11 +1,10 @@
 <template>
   <n-layout-content>
     <div class="overlay absolute w-full h-full z-256">
-      <!-- {{ dwellTimer.nextPage }} <br> -->
-      <!-- {{ dwellTimer.prevPage }} <br> -->
-      <!-- {{ currentPage }} <br> -->
-      <!-- {{ nextProgress }} <br> -->
-      <!-- {{ prevProgress }} -->
+      <n-progress class="absolute bottom-0" type="line" :show-indicator="false" :percentage="currentPageProgress">
+      </n-progress>
+    </div>
+    <div class="overlay absolute w-full h-full z-255">
       <TresCanvas>
         <TresPerspectiveCamera :position="[0, 0, 6]" :fov="45" :look-at="[0, 0, 0]"/>
         <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]" :visible="false">
@@ -32,7 +31,7 @@
     <n-layout-content>
       <div class="grid grid-cols-6">
         <div class="flex justify-center items-center">
-          <n-progress class="fast-progress" type="circle" :percentage="prevProgress" :color="dwellTimer.prevPage.progressColor">
+          <n-progress type="circle" :percentage="prevProgress" :color="dwellTimer.prevPage.progressColor">
             <div style="text-align: center">
               Previous Page
             </div>
@@ -47,7 +46,7 @@
           <div ref="annotationLayer" class="pdf__annotation-layer"></div>
         </div>
         <div class="flex justify-center items-center">
-          <n-progress class="fast-progress" type="circle" :percentage="nextProgress" :color="dwellTimer.nextPage.progressColor">
+          <n-progress type="circle" :percentage="nextProgress" :color="dwellTimer.nextPage.progressColor">
             <div style="text-align: center">
               Next Page
             </div>
@@ -119,6 +118,10 @@ const prevPage = () => {
   }
 };
 
+const getPageProgress = (): number => {
+  return (currentPage.value / totalPages.value) * 100
+};
+const currentPageProgress: ComputedRef<number> = computed(() => getPageProgress());
 const getProgress = (timer, triggerTime): number => {
   const progressStep = 3
   const snapStep = (Math.floor(100 / progressStep) - 2) * progressStep
