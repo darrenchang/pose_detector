@@ -4,7 +4,7 @@
       <div class="grid grid-cols-6 h-full">
         <div class="flex justify-center items-center">
           <n-progress type="circle" :percentage="prevProgress" :color="dwellTimer.prevPage.progressColor">
-            <n-button class="overlay-control" :on-click="prevPage" strong secondary>
+            <n-button class="pointer-events-auto!" :on-click="prevPage" strong secondary>
               Previous Page
             </n-button>
           </n-progress>
@@ -13,7 +13,7 @@
         </div>
         <div class="flex justify-center items-center">
           <n-progress type="circle" :percentage="nextProgress" :color="dwellTimer.nextPage.progressColor">
-            <n-button class="overlay-control" :on-click="nextPage" strong secondary>
+            <n-button class="pointer-events-auto!" :on-click="nextPage" strong secondary>
               Next Page
             </n-button>
           </n-progress>
@@ -404,11 +404,6 @@ onMounted(async () => {
 .overlay * {
   pointer-events: none;
 }
-.overlay-control,
-.overlay-control * {
-  pointer-events: auto;
-}
-
 
 canvas {
   pointer-events: none !important;
