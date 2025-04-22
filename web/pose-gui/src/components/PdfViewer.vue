@@ -1,7 +1,7 @@
 <template>
   <n-layout-content>
     <div class="overlay absolute w-full h-full z-256">
-      <n-progress class="absolute bottom-0" type="line" :show-indicator="false" :percentage="currentPageProgress">
+      <n-progress class="absolute bottom-[0]" type="line" :show-indicator="false" :percentage="currentPageProgress">
       </n-progress>
     </div>
     <div class="overlay absolute w-full h-full z-255">
