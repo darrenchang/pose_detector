@@ -1,8 +1,25 @@
 <template>
   <n-layout-content>
-    <div class="overlay absolute w-full h-full z-256">
-      <n-progress class="absolute bottom-[0]" type="line" :show-indicator="false" :percentage="currentPageProgress">
-      </n-progress>
+    <div class="overlay absolute w-full h-full z-1">
+      <div class="grid grid-cols-6 h-full">
+        <div class="flex justify-center items-center">
+          <n-progress type="circle" :percentage="prevProgress" :color="dwellTimer.prevPage.progressColor">
+            <n-button class="overlay-control" :on-click="prevPage" strong secondary>
+              Previous Page
+            </n-button>
+          </n-progress>
+        </div>
+        <div class="border-none m-auto col-span-4">
+        </div>
+        <div class="flex justify-center items-center">
+          <n-progress type="circle" :percentage="nextProgress" :color="dwellTimer.nextPage.progressColor">
+            <n-button class="overlay-control" :on-click="nextPage" strong secondary>
+              Next Page
+            </n-button>
+          </n-progress>
+        </div>
+      </div>
+      <n-progress class="absolute bottom-[0]" type="line" :show-indicator="false" :percentage="currentPageProgress" />
     </div>
     <div class="overlay absolute w-full h-full z-255">
       <TresCanvas>
@@ -29,36 +46,20 @@
       </TresCanvas>
     </div>
     <n-layout-content>
-      <div class="grid grid-cols-6">
-        <div class="flex justify-center items-center">
-          <n-progress type="circle" :percentage="prevProgress" :color="dwellTimer.prevPage.progressColor">
-            <div style="text-align: center">
-              Previous Page
-            </div>
-          </n-progress>
+      <div ref="pdfLayersWrapper" class="border-none m-auto col-span-4"
+           :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
+        <div class="pdf__canvas-layer">
+          <canvas ref="canvasLayer"/>
         </div>
-        <div ref="pdfLayersWrapper" class="border-none m-auto col-span-4"
-             :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
-          <div class="pdf__canvas-layer">
-            <canvas ref="canvasLayer"/>
-          </div>
-          <div ref="textLayer" class="pdf__text-layer hidden"></div>
-          <div ref="annotationLayer" class="pdf__annotation-layer"></div>
-        </div>
-        <div class="flex justify-center items-center">
-          <n-progress type="circle" :percentage="nextProgress" :color="dwellTimer.nextPage.progressColor">
-            <div style="text-align: center">
-              Next Page
-            </div>
-          </n-progress>
-        </div>
+        <div ref="textLayer" class="pdf__text-layer hidden"></div>
+        <div ref="annotationLayer" class="pdf__annotation-layer"></div>
       </div>
     </n-layout-content>
   </n-layout-content>
 </template>
 
 <script setup lang="ts">
-import { NLayoutContent, NProgress } from 'naive-ui';
+import { NLayoutContent, NProgress, NButton } from 'naive-ui';
 import type { Ref, ComputedRef } from 'vue';
 import { computed, onMounted, ref, shallowRef, watch, watchEffect } from 'vue';
 import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
@@ -403,6 +404,11 @@ onMounted(async () => {
 .overlay * {
   pointer-events: none;
 }
+.overlay-control,
+.overlay-control * {
+  pointer-events: auto;
+}
+
 
 canvas {
   pointer-events: none !important;
