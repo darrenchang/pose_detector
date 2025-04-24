@@ -64,7 +64,7 @@ import type { Ref, ComputedRef } from 'vue';
 import { computed, onMounted, ref, shallowRef, watch, watchEffect } from 'vue';
 import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
 import { poseLandmarks } from '@/interface/poseLandmarksInterface';
-import { leftHandLandmarks, rightHandLandmarks } from '@/interface/handLandmarksInterface';
+import { leftHandLandmarks, rightHandLandmarks, handGestures } from '@/interface/handLandmarksInterface';
 import { TresCanvas, useRenderLoop } from '@tresjs/core';
 
 const pdfLayersWrapper: Ref<any> = ref(null);
@@ -304,38 +304,16 @@ const updateLandmarks = (groupRef, landmarks, delta, offsetPosition = { x: 0, y:
 
 // Dwell activation methods
 const pageTurnDwellCheck = (action: String, _dwellTimer, delta: number) => {
-  const nose = poseLandmarksGroupRef.value.children.reduce((acc, cur) => {
-    if(cur.name === "nose" && cur.visible) {
-      acc = cur;
-      return acc;
-    }
-    return acc;
-  }, undefined);
-  let hand = undefined;
+  let gesture = undefined;
   let pageTurnFunction = nextPage;
   if(action === "nextPage") {
     pageTurnFunction = nextPage;
-    hand = rightHandLandmarksGroupRef;
+    gesture = handGestures.right;
   } else if(action === "prevPage") {
     pageTurnFunction = prevPage;
-    hand = leftHandLandmarksGroupRef;
+    gesture = handGestures.left;
   }
-  // Exit the function if no dwell check can be done
-  if(hand.value.children[0].visible === false || hand === undefined || nose === undefined) {
-    _dwellTimer.currentAccTime = 0;
-    return;
-  }
-
-  const handLandmarkPositions = hand.value.children.reduce((positions, cur) => {
-    positions.push([
-      cur.position["x"],
-      cur.position["y"],
-      cur.position["z"],
-    ]);
-    return positions;
-  }, []);
-  const handLandmarkCenter = getCenter(handLandmarkPositions);
-  const isInZone = handLandmarkCenter.y > nose.position.y;
+  const isInZone = gesture === "pointing_up"
   if(isInZone) {
     _dwellTimer.currentAccTime += delta;
   } else {
