@@ -94,9 +94,10 @@ class Hand:
     def __init__(self):
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.download_model(output_path=self.current_dir)
-        self.base_options = python.BaseOptions(model_asset_path=f"{self.current_dir}/hand_landmarker.task")
-        self.options = vision.HandLandmarkerOptions(base_options=self.base_options, num_hands=2)
-        self.detector = vision.HandLandmarker.create_from_options(self.options)
+        self.base_options = python.BaseOptions(model_asset_path=f"{self.current_dir}/gesture_recognizer.task")
+        self.options = vision.GestureRecognizerOptions(base_options=self.base_options, num_hands=2)
+        # self.options = vision.GestureRecognizerOptions(base_options=self.base_options, num_hands=2)
+        self.recognizer = vision.GestureRecognizer.create_from_options(self.options)
         self.landmark_map = [
             # hand landmarks diagram:
             # https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker
@@ -126,13 +127,18 @@ class Hand:
 
     def inference(self, im):
         image = mp.Image(image_format=mp.ImageFormat.SRGB, data=im)
-        results = self.detector.detect(image)
+        results = self.recognizer.recognize(image)
         landmarks = {
             "left": [],
             "right": [],
         }
+        gestures = {
+            "left": "",
+            "right": "",
+        }
         for i, hand in enumerate(results.handedness):
             hand_name = hand[0].display_name.lower()
+            gestures[hand_name] = results.gestures[i][0].category_name
             for k, landmark in enumerate(results.hand_world_landmarks[i]):
                 landmarks[hand_name].append(
                     {
@@ -144,27 +150,27 @@ class Hand:
                         "visibility": landmark.visibility,
                     }
                 )
-        return landmarks
+        return landmarks, gestures
 
     @staticmethod
     def download_model(output_path):
-        hand_landmarker_model_url = (
-            "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/"
-            "hand_landmarker.task"
+        gesture_recognizer_model_url = (
+            "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/"
+            "gesture_recognizer.task"
         )
-        model_file = f"{output_path}/hand_landmarker.task"
+        model_file = f"{output_path}/gesture_recognizer.task"
         if Path(model_file).exists():
-            logger.info(f"The landmarker file {model_file} is found. Skipping download.")
+            logger.info(f"The gesture_recognizer file {model_file} is found. Skipping download.")
             return
         session = requests.Session()
-        with session.get(hand_landmarker_model_url, stream=True) as r:
+        with session.get(gesture_recognizer_model_url, stream=True) as r:
             if r.status_code == 200:
-                logger.info("Downloading the landmarker model...")
+                logger.info("Downloading the gesture_recognizer model...")
                 with open(model_file, "wb") as fd:
                     for chunk in r.iter_content(chunk_size=16 * 1024):
                         fd.write(chunk)
             else:
-                logger.warning(f"Failed to download hand landmarker model. HTTP status code: {r.status_code}")
+                logger.warning(f"Failed to download gesture_recognizer model. HTTP status code: {r.status_code}")
         return
 
 
@@ -205,17 +211,14 @@ class RpcService(rpyc.Service):
                 continue
             img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             landmarks = self.pose.inference(img2)
-            hand = self.hand.inference(img2)
+            hand, gestures = self.hand.inference(img2)
             self.socketio.emit(
                 "landmarks",
                 marshal(
                     {
                         "pose_landmarks": landmarks,
                         "hand_landmarks": hand,
-                        "hand_gestures": {
-                            "left": "ffff",
-                            "right": "assf",
-                        }
+                        "hand_gestures": gestures,
                     },
                     self.model_landmarks,
                 ),
