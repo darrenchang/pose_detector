@@ -19,7 +19,8 @@
           </n-progress>
         </div>
       </div>
-      <n-progress class="absolute bottom-[0]" type="line" :show-indicator="false" :percentage="currentPageProgress" />
+      <n-slider class="absolute top-[15px] pointer-events-auto!" :min="1" :max="10" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" />
+      <n-progress class="absolute top-[5px]" type="line" :show-indicator="false" :percentage="currentPageProgress" />
     </div>
     <div class="overlay absolute w-full h-full z-255">
       <TresCanvas>
@@ -46,20 +47,21 @@
       </TresCanvas>
     </div>
     <n-layout-content>
-      <div ref="pdfLayersWrapper" class="border-none m-auto col-span-4"
-           :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
-        <div class="pdf__canvas-layer">
-          <canvas ref="canvasLayer"/>
+      <div class="w-full h-full overflow-auto">
+        <div ref="pdfLayersWrapper" class="border-none w-full h-full m-auto" :class="{'flex justify-center': false}">
+          <div class="pdf__canvas-layer m-auto" :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
+            <canvas ref="canvasLayer"/>
+          </div>
+          <div ref="textLayer" class="pdf__text-layer hidden"></div>
+          <div ref="annotationLayer" class="pdf__annotation-layer"></div>
         </div>
-        <div ref="textLayer" class="pdf__text-layer hidden"></div>
-        <div ref="annotationLayer" class="pdf__annotation-layer"></div>
       </div>
     </n-layout-content>
   </n-layout-content>
 </template>
 
 <script setup lang="ts">
-import { NLayoutContent, NProgress, NButton } from 'naive-ui';
+import { NLayoutContent, NProgress, NButton, NSlider  } from 'naive-ui';
 import type { Ref, ComputedRef } from 'vue';
 import { computed, onMounted, ref, shallowRef, watch, watchEffect } from 'vue';
 import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
@@ -79,6 +81,7 @@ const currentPage: Ref<number> = ref(1);
 const totalPages: Ref<number> = ref(3);
 const pdfWidth: Ref<number> = ref(0);
 const pdfHeight: Ref<number> = ref(0);
+const pdfZoomScale:Ref<number> = ref(1);
 
 interface dwellTimerData {
   "nextPage": {
@@ -240,7 +243,7 @@ const processLoadingTask = (source: string): void => {
         "--scale-factor",
         `${1}`
       );
-      const viewport = pageProxy.getViewport({ scale: 1 });
+      const viewport = pageProxy.getViewport({ scale: pdfZoomScale.value });
       renderText(pageProxy, textLayer.value, viewport);
       renderAnnotations(pageProxy, annotationLayer.value, viewport);
       return renderCanvas(pageProxy, canvasLayer.value, viewport);
@@ -379,6 +382,10 @@ watch(currentPage, async (newValue) => {
   renderText(pageProxy, textLayer.value, viewport);
   await renderAnnotations(pageProxy, annotationLayer.value, viewport);
   renderCanvas(pageProxy, canvasLayer.value, viewport);
+});
+
+watch(pdfZoomScale, async (_) => {
+  processLoadingTask(pdfSrc);
 });
 
 watchEffect(() => {
