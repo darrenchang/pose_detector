@@ -258,9 +258,9 @@ const poseToCanvasCoord = (coord: number, factor: number) => {
   return 1 - coord * factor;
 };
 
-const CanvasToPoseCoord = (coord: number, factor: number) => {
+const canvasToPoseCoord = (coord: number, factor: number) => {
   // Convert landmarks from views canvas coord to models coord cord
-  return (1 + coord) / factor;
+  return (coord - 1) * -1 / factor;
 };
 
 const getCenter = (points: number[][]): { "x": number, "y": number, "z": number } => {
@@ -277,8 +277,14 @@ const getCenter = (points: number[][]): { "x": number, "y": number, "z": number 
   };
 };
 
-const smoothing = (start: number, end: number, delta: number) => {
-  const speed = Math.min(Math.max(end - start * 2, 7), 10);
+const smoothing = (start: number, end: number, delta: number, speed_override = -1) => {
+  let speed = 10
+  if (speed_override === -1) {
+    speed = Math.min(Math.max(end - start * 2, 7), 10);
+  }
+  else {
+    speed = speed_override;
+  }
   const alpha = 1 - Math.exp(-speed * delta);
   const threshold = 0.3;
   if(Math.abs(end - start) > threshold) {
@@ -288,15 +294,15 @@ const smoothing = (start: number, end: number, delta: number) => {
   }
 };
 
-const updateLandmarks = (groupRef, landmarks, delta, offsetPosition = { x: 0, y: 0, z: 0 }) => {
+const updateLandmarks = (groupRef, landmarks, delta, smooth_speed = -1, offsetPosition = { x: 0, y: 0, z: 0 }) => {
   groupRef.value.children.forEach((item) => {
     const landmark = landmarks[item.name].position;
     const newX = poseToCanvasCoord(offsetPosition.x + landmark[0], canvas_factor);
     const newY = poseToCanvasCoord(offsetPosition.y + landmark[1], canvas_factor);
     const newZ = poseToCanvasCoord(offsetPosition.z + landmark[2], canvas_factor);
-    item.position.x = smoothing(item.position.x, newX, delta);
-    item.position.y = smoothing(item.position.y, newY, delta);
-    item.position.z = smoothing(item.position.z, newZ, delta);
+    item.position.x = smoothing(item.position.x, newX, delta, smooth_speed);
+    item.position.y = smoothing(item.position.y, newY, delta, smooth_speed);
+    item.position.z = smoothing(item.position.z, newZ, delta, smooth_speed);
     const displayConditions = [landmarks[item.name].exist, landmarks[item.name].display];
     item.visible = displayConditions.every(item => item === true);
   });
@@ -333,23 +339,35 @@ onLoop(({ delta, elapsed }) => {
   if(paused.value) return;
   if(!poseLandmarksGroupRef.value || !leftHandLandmarksGroupRef.value || !rightHandLandmarksGroupRef.value) return;
 
-  updateLandmarks(poseLandmarksGroupRef, poseLandmarks, delta);
+  updateLandmarks(poseLandmarksGroupRef, poseLandmarks, delta, -1);
 
-  const leftPalmOffset = getCenter([
-    poseLandmarks["leftWrist"].position,
-    poseLandmarks["leftPinky"].position,
-    poseLandmarks["leftIndex"].position,
-    poseLandmarks["leftThumb"].position,
-  ]);
-  updateLandmarks(leftHandLandmarksGroupRef, leftHandLandmarks, delta, leftPalmOffset);
+  const leftWrist = poseLandmarksGroupRef.value.children.reduce((acc, cur) => {
+    if(cur.name === "leftWrist") {
+      acc = cur;
+      return acc;
+    }
+    return acc;
+  }, undefined);
+  const leftPalmOffset = {
+    "x": canvasToPoseCoord(leftWrist.position.x, canvas_factor),
+    "y": canvasToPoseCoord(leftWrist.position.y, canvas_factor),
+    "z": canvasToPoseCoord(leftWrist.position.z, canvas_factor),
+  }
+  updateLandmarks(leftHandLandmarksGroupRef, leftHandLandmarks, delta, 50, leftPalmOffset);
 
-  const rightPalmOffset = getCenter([
-    poseLandmarks["rightWrist"].position,
-    poseLandmarks["rightPinky"].position,
-    poseLandmarks["rightIndex"].position,
-    poseLandmarks["rightThumb"].position,
-  ]);
-  updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, delta, rightPalmOffset);
+  const rightWrist = poseLandmarksGroupRef.value.children.reduce((acc, cur) => {
+    if(cur.name === "rightWrist") {
+      acc = cur;
+      return acc;
+    }
+    return acc;
+  }, undefined);
+  const rightPalmOffset = {
+    "x": canvasToPoseCoord(rightWrist.position.x, canvas_factor),
+    "y": canvasToPoseCoord(rightWrist.position.y, canvas_factor),
+    "z": canvasToPoseCoord(rightWrist.position.z, canvas_factor),
+  }
+  updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, delta, 50, rightPalmOffset);
   // Check dwell activation
   pageTurnDwellCheck("nextPage", dwellTimer.value.nextPage, delta);
   pageTurnDwellCheck("prevPage", dwellTimer.value.prevPage, delta);
