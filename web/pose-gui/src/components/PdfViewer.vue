@@ -46,13 +46,14 @@
       </TresCanvas>
     </div>
     <n-layout-content>
-      <div ref="pdfLayersWrapper" class="border-none m-auto col-span-4"
-           :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
-        <div class="pdf__canvas-layer">
-          <canvas ref="canvasLayer"/>
+      <div class="w-full h-full">
+        <div ref="pdfLayersWrapper" class="border-none flex justify-center w-full h-full overflow-auto">
+          <div class="pdf__canvas-layer">
+            <canvas ref="canvasLayer"/>
+          </div>
+          <div ref="textLayer" class="pdf__text-layer hidden"></div>
+          <div ref="annotationLayer" class="pdf__annotation-layer"></div>
         </div>
-        <div ref="textLayer" class="pdf__text-layer hidden"></div>
-        <div ref="annotationLayer" class="pdf__annotation-layer"></div>
       </div>
     </n-layout-content>
   </n-layout-content>
@@ -77,8 +78,6 @@ let pdf = undefined;
 const { onLoop } = useRenderLoop();
 const currentPage: Ref<number> = ref(1);
 const totalPages: Ref<number> = ref(3);
-const pdfWidth: Ref<number> = ref(0);
-const pdfHeight: Ref<number> = ref(0);
 
 interface dwellTimerData {
   "nextPage": {
@@ -211,8 +210,6 @@ const renderText = (pdfPageProxy, textLayerContainer, viewport) => {
 
 const renderCanvas = (pdfPageProxy, canvasLayer, viewport) => {
   const { width, height, rotation } = viewport;
-  pdfWidth.value = width;
-  pdfHeight.value = height;
   canvasLayer.width = width;
   canvasLayer.height = height;
   const context = canvasLayer.getContext("2d");
