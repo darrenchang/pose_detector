@@ -21,6 +21,47 @@ logger = Logger(__file__).get_logger()
 
 
 class Pose:
+    landmark_map = [
+        # pose landmarks diagram:
+        # https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker#pose_landmarker_model
+        # NOTE: The order of the items must match the landmarker model
+        # head
+        "nose",
+        "leftEyeInner",
+        "leftEye",
+        "leftEyeOuter",
+        "ghtEyeInner",
+        "rightEye",
+        "rightEyeOuter",
+        "leftEar",
+        "rightEar",
+        "mouthLeft",
+        "mouthRight",
+        # body
+        "leftShoulder",
+        "rightShoulder",
+        "leftElbow",
+        "rightElbow",
+        "leftWrist",
+        "rightWrist",
+        "leftPinky",
+        "rightPinky",
+        "leftIndex",
+        "rightIndex",
+        "leftThumb",
+        "rightThumb",
+        "leftHip",
+        "rightHip",
+        "leftKnee",
+        "rightKnee",
+        "leftAnkle",
+        "rightAnkle",
+        "leftHeel",
+        "rightHeel",
+        "leftFootIndex",
+        "rightFootIndex",
+    ]
+
     def __init__(self):
         mp_pose = mp.solutions.pose
         pose_options = {
@@ -31,46 +72,6 @@ class Pose:
             "model_complexity": 0,
         }
         self.pose = mp_pose.Pose(**pose_options)
-        self.landmark_map = [
-            # pose landmarks diagram:
-            # https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker#pose_landmarker_model
-            # NOTE: The order of the items must match the landmarker model
-            # head
-            "nose",
-            "leftEyeInner",
-            "leftEye",
-            "leftEyeOuter",
-            "ghtEyeInner",
-            "rightEye",
-            "rightEyeOuter",
-            "leftEar",
-            "rightEar",
-            "mouthLeft",
-            "mouthRight",
-            # body
-            "leftShoulder",
-            "rightShoulder",
-            "leftElbow",
-            "rightElbow",
-            "leftWrist",
-            "rightWrist",
-            "leftPinky",
-            "rightPinky",
-            "leftIndex",
-            "rightIndex",
-            "leftThumb",
-            "rightThumb",
-            "leftHip",
-            "rightHip",
-            "leftKnee",
-            "rightKnee",
-            "leftAnkle",
-            "rightAnkle",
-            "leftHeel",
-            "rightHeel",
-            "leftFootIndex",
-            "rightFootIndex",
-        ]
 
     def inference(self, im):
         results = self.pose.process(im)
@@ -91,6 +92,43 @@ class Pose:
 
 
 class Hand:
+    landmark_map = [
+        # hand landmarks diagram:
+        # https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker
+        # NOTE: The order of the items must match the landmarker model
+        "wrist",
+        "thumb_cmc",
+        "thumb_mcp",
+        "thumb_ip",
+        "thumb_tip",
+        "index_finger_mcp",
+        "index_finger_pip",
+        "index_finger_dip",
+        "index_finger_tip",
+        "middle_finger_mcp",
+        "middle_finger_pip",
+        "middle_finger_dip",
+        "middle_finger_tip",
+        "ring_finger_mcp",
+        "ring_finger_pip",
+        "ring_finger_dip",
+        "ring_finger_tip",
+        "pinky_mcp",
+        "pinky_pip",
+        "pinky_dip",
+        "pinky_tip",
+    ]
+    gesture_map = {
+        "Pointing_Up": "pointing_up",
+        "Open_Palm": "open_palm",
+        "Closed_Fist": "closed_fist",
+        "Thumb_Down": "thumb_down",
+        "Thumb_Up": "thumb_up",
+        "Victory": "victory",
+        "ILoveYou": "i_love_you",
+        "None": "unknown",
+    }
+
     def __init__(self):
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.download_model(output_path=self.current_dir)
@@ -98,32 +136,6 @@ class Hand:
         self.options = vision.GestureRecognizerOptions(base_options=self.base_options, num_hands=2)
         # self.options = vision.GestureRecognizerOptions(base_options=self.base_options, num_hands=2)
         self.recognizer = vision.GestureRecognizer.create_from_options(self.options)
-        self.landmark_map = [
-            # hand landmarks diagram:
-            # https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker
-            # NOTE: The order of the items must match the landmarker model
-            "wrist",
-            "thumb_cmc",
-            "thumb_mcp",
-            "thumb_ip",
-            "thumb_tip",
-            "index_finger_mcp",
-            "index_finger_pip",
-            "index_finger_dip",
-            "index_finger_tip",
-            "middle_finger_mcp",
-            "middle_finger_pip",
-            "middle_finger_dip",
-            "middle_finger_tip",
-            "ring_finger_mcp",
-            "ring_finger_pip",
-            "ring_finger_dip",
-            "ring_finger_tip",
-            "pinky_mcp",
-            "pinky_pip",
-            "pinky_dip",
-            "pinky_tip",
-        ]
 
     def inference(self, im):
         image = mp.Image(image_format=mp.ImageFormat.SRGB, data=im)
@@ -138,7 +150,7 @@ class Hand:
         }
         for i, hand in enumerate(results.handedness):
             hand_name = hand[0].display_name.lower()
-            gestures[hand_name] = results.gestures[i][0].category_name
+            gestures[hand_name] = self.gesture_map.get(results.gestures[i][0].category_name, "unknown")
             for k, landmark in enumerate(results.hand_world_landmarks[i]):
                 landmarks[hand_name].append(
                     {
