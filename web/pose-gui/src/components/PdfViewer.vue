@@ -23,8 +23,23 @@
           </n-progress>
         </div>
       </div>
-      <n-slider class="absolute top-[15px] pointer-events-auto!" :min="1" :max="10" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" />
-      <n-progress class="absolute top-[5px]" type="line" :show-indicator="false" :percentage="currentPageProgress" />
+      <div class="grid grid-cols-6 w-full gap-4 absolute top-[5px]">
+        <div class="col-span-6">
+          <n-button class="pointer-events-auto!" @click="zoom(-1)" strong secondary>
+            Zoom Out
+          </n-button>
+          <n-tag>{{ pdfZoomScale }}</n-tag>
+          <n-button class="pointer-events-auto!" @click="zoom(1)" strong secondary>
+            Zoom In
+          </n-button>
+        </div>
+        <!-- <n-slider class="pointer-events-auto!" :min="pdfZoomScaleMin" :max="pdfZoomScaleMax" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" /> -->
+      </div>
+      <div class="grid grid-cols-6 w-full gap-4 absolute bottom-[20px]">
+        <n-progress class="col-span-6" type="line" indicator-placement="inside" :show-indicator="true" :percentage="currentPageProgress">
+          {{ currentPage }}/{{ totalPages }}
+        </n-progress>
+      </div>
     </div>
     <div class="overlay absolute w-full h-full z-255">
       <TresCanvas>
@@ -87,6 +102,8 @@ const totalPages: Ref<number> = ref(3);
 const pdfWidth: Ref<number> = ref(0);
 const pdfHeight: Ref<number> = ref(0);
 const pdfZoomScale:Ref<number> = ref(1);
+const pdfZoomScaleMax = 10
+const pdfZoomScaleMin = 1
 
 interface dwellTimerData {
   "nextPage": {
@@ -112,6 +129,16 @@ const dwellTimer: Ref<dwellTimerData> = ref({
     currentAccTime: 0,
     triggerTime: 3,
     progressColor: '#007bff',
+  },
+  zoomIn: {
+    currentAccTime: 0,
+    triggerTime: 1,
+    progressColor: '#007bff',
+  },
+  zoomOut: {
+    currentAccTime: 0,
+    triggerTime: 1,
+    progressColor: '#007bff',
   }
 });
 
@@ -126,6 +153,18 @@ const prevPage = () => {
     currentPage.value--;
   }
 };
+const zoom = (value) => {
+  let newScale = pdfZoomScale.value + value
+  if (newScale > pdfZoomScaleMax) {
+    pdfZoomScale.value = pdfZoomScaleMax;
+  }
+  else if (newScale < pdfZoomScaleMin) {
+    pdfZoomScale.value = pdfZoomScaleMin;
+  }
+  else {
+    pdfZoomScale.value = newScale;
+  }
+}
 
 const getPageProgress = (): number => {
   return (currentPage.value / totalPages.value) * 100
@@ -320,7 +359,7 @@ const updateLandmarks = (groupRef, landmarks, delta, smooth_speed = -1, offsetPo
 const pageTurnDwellCheck = (action: String, _dwellTimer, delta: number) => {
   let gesture = undefined;
   let pageTurnFunction = nextPage;
-  if(action === "nextPage") {
+  if (action === "nextPage") {
     pageTurnFunction = nextPage;
     gesture = handGestures.right;
   } else if(action === "prevPage") {
@@ -335,6 +374,30 @@ const pageTurnDwellCheck = (action: String, _dwellTimer, delta: number) => {
   }
   if(_dwellTimer.currentAccTime > _dwellTimer.triggerTime) {
     pageTurnFunction();
+    _dwellTimer.currentAccTime = 0;
+  }
+};
+const zoomDwellCheck = (action: String, _dwellTimer, delta: number) => {
+  let gesture = undefined;
+  let zoomGesture = ""
+  let zoomValue = 1;
+  if (action === "zoomIn") {
+    zoomGesture = "thumb_up"
+    zoomValue = 1;
+  }
+  if (action === "zoomOut") {
+    zoomGesture = "thumb_down"
+    zoomValue = -1;
+  }
+  const isDwelling = (handGestures.right === zoomGesture || handGestures.left === zoomGesture)
+  if (isDwelling) {
+    _dwellTimer.currentAccTime += delta;
+  }
+  else {
+    _dwellTimer.currentAccTime = 0;
+  }
+  if (_dwellTimer.currentAccTime > _dwellTimer.triggerTime) {
+    zoom(zoomValue)
     _dwellTimer.currentAccTime = 0;
   }
 };
@@ -379,6 +442,8 @@ onLoop(({ delta, elapsed }) => {
   // Check dwell activation
   pageTurnDwellCheck("nextPage", dwellTimer.value.nextPage, delta);
   pageTurnDwellCheck("prevPage", dwellTimer.value.prevPage, delta);
+  zoomDwellCheck("zoomIn", dwellTimer.value.zoomIn, delta);
+  zoomDwellCheck("zoomOut", dwellTimer.value.zoomOut, delta);
 });
 
 watch(currentPage, async (newValue) => {
