@@ -124,6 +124,16 @@ const dwellTimer: Ref<dwellTimerData> = ref({
     currentAccTime: 0,
     triggerTime: 3,
     progressColor: '#007bff',
+  },
+  zoomIn: {
+    currentAccTime: 0,
+    triggerTime: 1,
+    progressColor: '#007bff',
+  },
+  zoomOut: {
+    currentAccTime: 0,
+    triggerTime: 1,
+    progressColor: '#007bff',
   }
 });
 
@@ -344,7 +354,7 @@ const updateLandmarks = (groupRef, landmarks, delta, smooth_speed = -1, offsetPo
 const pageTurnDwellCheck = (action: String, _dwellTimer, delta: number) => {
   let gesture = undefined;
   let pageTurnFunction = nextPage;
-  if(action === "nextPage") {
+  if (action === "nextPage") {
     pageTurnFunction = nextPage;
     gesture = handGestures.right;
   } else if(action === "prevPage") {
@@ -359,6 +369,30 @@ const pageTurnDwellCheck = (action: String, _dwellTimer, delta: number) => {
   }
   if(_dwellTimer.currentAccTime > _dwellTimer.triggerTime) {
     pageTurnFunction();
+    _dwellTimer.currentAccTime = 0;
+  }
+};
+const zoomDwellCheck = (action: String, _dwellTimer, delta: number) => {
+  let gesture = undefined;
+  let zoomGesture = ""
+  let zoomValue = 1;
+  if (action === "zoomIn") {
+    zoomGesture = "thumb_up"
+    zoomValue = 1;
+  }
+  if (action === "zoomOut") {
+    zoomGesture = "thumb_down"
+    zoomValue = -1;
+  }
+  const isDwelling = (handGestures.right === zoomGesture || handGestures.left === zoomGesture)
+  if (isDwelling) {
+    _dwellTimer.currentAccTime += delta;
+  }
+  else {
+    _dwellTimer.currentAccTime = 0;
+  }
+  if (_dwellTimer.currentAccTime > _dwellTimer.triggerTime) {
+    zoom(zoomValue)
     _dwellTimer.currentAccTime = 0;
   }
 };
@@ -403,6 +437,8 @@ onLoop(({ delta, elapsed }) => {
   // Check dwell activation
   pageTurnDwellCheck("nextPage", dwellTimer.value.nextPage, delta);
   pageTurnDwellCheck("prevPage", dwellTimer.value.prevPage, delta);
+  zoomDwellCheck("zoomIn", dwellTimer.value.zoomIn, delta);
+  zoomDwellCheck("zoomOut", dwellTimer.value.zoomOut, delta);
 });
 
 watch(currentPage, async (newValue) => {
