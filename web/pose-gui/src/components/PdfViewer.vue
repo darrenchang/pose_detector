@@ -20,7 +20,9 @@
         </div>
       </div>
       <n-slider class="absolute top-[15px] pointer-events-auto!" :min="1" :max="10" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" />
-      <n-progress class="absolute top-[5px]" type="line" :show-indicator="false" :percentage="currentPageProgress" />
+      <n-progress class="absolute top-[5px]" type="line" indicator-placement="inside" :show-indicator="true" :percentage="currentPageProgress">
+        {{ currentPage }}/{{ totalPages }}
+      </n-progress>
     </div>
     <div class="overlay absolute w-full h-full z-255">
       <TresCanvas>
