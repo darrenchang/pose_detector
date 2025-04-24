@@ -212,6 +212,10 @@ class RpcService(rpyc.Service):
                     {
                         "pose_landmarks": landmarks,
                         "hand_landmarks": hand,
+                        "hand_gestures": {
+                            "left": "ffff",
+                            "right": "assf",
+                        }
                     },
                     self.model_landmarks,
                 ),

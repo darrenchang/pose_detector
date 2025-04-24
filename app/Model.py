@@ -20,7 +20,7 @@ class Model:
     @functools.cached_property
     def landmark(self):
         return SwaggerModel(
-            "Landmark",
+            "LandmarkPose",
             {
                 "index": fields.Integer(example=0),
                 "name": fields.String(example="nose", default=""),
@@ -34,10 +34,20 @@ class Model:
     @functools.cached_property
     def landmark_hand(self):
         return SwaggerModel(
-            "Landmark",
+            "LandmarkHand",
             {
                 "left": fields.List(fields.Nested(self.landmark), default=[]),
                 "right": fields.List(fields.Nested(self.landmark), default=[]),
+            },
+        )
+
+    @functools.cached_property
+    def gesture_hand(self):
+        return SwaggerModel(
+            "GestureHand",
+            {
+                "left": fields.String(example="unknown", default=""),
+                "right": fields.String(example="closed_fist", default=""),
             },
         )
 
@@ -48,5 +58,6 @@ class Model:
             {
                 "pose_landmarks": fields.List(fields.Nested(self.landmark), default=[]),
                 "hand_landmarks": fields.Nested(self.landmark_hand),
+                "hand_gestures": fields.Nested(self.gesture_hand),
             },
         )

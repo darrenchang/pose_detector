@@ -21,6 +21,8 @@ param: Param = Param()
 model: Model = Model()
 model_detail = ns_base.model(model.detail.name, model.detail)
 ns_base.model(model.landmark.name, model.landmark)
+ns_base.model(model.landmark_hand.name, model.landmark_hand)
+ns_base.model(model.gesture_hand.name, model.gesture_hand)
 model_landmarks = ns_base.model(model.landmarks.name, model.landmarks)
 
 
