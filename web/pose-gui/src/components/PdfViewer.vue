@@ -4,8 +4,10 @@
       <div class="grid grid-cols-6 h-full">
         <div class="flex justify-center items-center">
           <n-progress type="circle" :percentage="prevProgress" :color="dwellTimer.prevPage.progressColor">
-            <n-button class="pointer-events-auto!" :on-click="prevPage" strong secondary>
-              Previous Page
+            <n-button class="pointer-events-auto!" :on-click="prevPage" secondary text>
+              <n-icon class="pointer-events-auto!" :on-click="prevPage" :size="40" color="`#EBEBEB`">
+                <ArrowBackIosNewFilled/>
+              </n-icon>
             </n-button>
           </n-progress>
         </div>
@@ -13,8 +15,10 @@
         </div>
         <div class="flex justify-center items-center">
           <n-progress type="circle" :percentage="nextProgress" :color="dwellTimer.nextPage.progressColor">
-            <n-button class="pointer-events-auto!" :on-click="nextPage" strong secondary>
-              Next Page
+            <n-button text class="pointer-events-auto!" :on-click="nextPage" strong secondary>
+              <n-icon :size="40" color="`#EBEBEB`">
+                <ArrowForwardIosOutlined/>
+              </n-icon>
             </n-button>
           </n-progress>
         </div>
@@ -61,13 +65,14 @@
 </template>
 
 <script setup lang="ts">
-import { NLayoutContent, NProgress, NButton, NSlider  } from 'naive-ui';
+import { NLayoutContent, NProgress, NButton, NSlider, NIcon } from 'naive-ui';
 import type { Ref, ComputedRef } from 'vue';
 import { computed, onMounted, ref, shallowRef, watch, watchEffect } from 'vue';
 import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
 import { poseLandmarks } from '@/interface/poseLandmarksInterface';
 import { leftHandLandmarks, rightHandLandmarks, handGestures } from '@/interface/handLandmarksInterface';
 import { TresCanvas, useRenderLoop } from '@tresjs/core';
+import { ArrowBackIosNewFilled, ArrowForwardIosOutlined } from '@vicons/material';
 
 const pdfLayersWrapper: Ref<any> = ref(null);
 const canvasLayer: Ref<any> = ref(null);
