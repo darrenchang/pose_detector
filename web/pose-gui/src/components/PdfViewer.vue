@@ -380,7 +380,7 @@ onLoop(({ delta, elapsed }) => {
 
 watch(currentPage, async (newValue) => {
   const pageProxy = await pdfProxy.getPage(newValue);
-  const viewport = pageProxy.getViewport({ scale: 1 });
+  const viewport = pageProxy.getViewport({ scale: pdfZoomScale.value });
   renderText(pageProxy, textLayer.value, viewport);
   await renderAnnotations(pageProxy, annotationLayer.value, viewport);
   renderCanvas(pageProxy, canvasLayer.value, viewport);
