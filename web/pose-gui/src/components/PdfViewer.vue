@@ -19,10 +19,22 @@
           </n-progress>
         </div>
       </div>
-      <n-slider class="absolute top-[15px] pointer-events-auto!" :min="1" :max="10" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" />
-      <n-progress class="absolute top-[5px]" type="line" indicator-placement="inside" :show-indicator="true" :percentage="currentPageProgress">
-        {{ currentPage }}/{{ totalPages }}
-      </n-progress>
+      <div class="grid grid-cols-6 w-full gap-4 absolute top-[5px]">
+        <div class="col-span-6">
+          <n-button class="pointer-events-auto!" @click="zoom(-1)" strong secondary>
+            Zoom Out
+          </n-button>
+          <n-button class="pointer-events-auto!" @click="zoom(1)" strong secondary>
+            Zoom In
+          </n-button>
+        </div>
+        <!-- <n-slider class="pointer-events-auto!" :min="pdfZoomScaleMin" :max="pdfZoomScaleMax" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" /> -->
+      </div>
+      <div class="grid grid-cols-6 w-full gap-4 absolute bottom-[20px]">
+        <n-progress class="col-span-6" type="line" indicator-placement="inside" :show-indicator="true" :percentage="currentPageProgress">
+          {{ currentPage }}/{{ totalPages }}
+        </n-progress>
+      </div>
     </div>
     <div class="overlay absolute w-full h-full z-255">
       <TresCanvas>
@@ -84,6 +96,8 @@ const totalPages: Ref<number> = ref(3);
 const pdfWidth: Ref<number> = ref(0);
 const pdfHeight: Ref<number> = ref(0);
 const pdfZoomScale:Ref<number> = ref(1);
+const pdfZoomScaleMax = 10
+const pdfZoomScaleMin = 1
 
 interface dwellTimerData {
   "nextPage": {
@@ -123,6 +137,18 @@ const prevPage = () => {
     currentPage.value--;
   }
 };
+const zoom = (value) => {
+  let newScale = pdfZoomScale.value + value
+  if (newScale > pdfZoomScaleMax) {
+    pdfZoomScale.value = pdfZoomScaleMax;
+  }
+  else if (newScale < pdfZoomScaleMin) {
+    pdfZoomScale.value = pdfZoomScaleMin;
+  }
+  else {
+    pdfZoomScale.value = newScale;
+  }
+}
 
 const getPageProgress = (): number => {
   return (currentPage.value / totalPages.value) * 100
