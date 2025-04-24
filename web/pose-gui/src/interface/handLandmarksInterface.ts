@@ -8,6 +8,10 @@ export interface handLandmarksInterface {
   }
 }
 
+export interface handGestureInterface {
+  [key: string]: string
+}
+
 const exampleHandLandmarks: handLandmarksInterface = {
   // hand landmarks diagram https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker
   // NOTE: The order of the items must match the landmarker model
@@ -160,6 +164,11 @@ const exampleHandLandmarks: handLandmarksInterface = {
   },
 }
 
+const exampleHandGesture: handGestureInterface = {
+  "left": "",
+  "right": "",
+}
+
 
 export const leftHandLandmarks: handLandmarksInterface = Object.keys(exampleHandLandmarks).reduce((acc, cur: string) => {
   const landmark = structuredClone(exampleHandLandmarks)[cur]
@@ -173,3 +182,4 @@ export const rightHandLandmarks: handLandmarksInterface = Object.keys(exampleHan
   return acc
 }, {})
 
+export const handGestures: handGestureInterface = structuredClone(exampleHandGesture)
