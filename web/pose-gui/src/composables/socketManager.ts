@@ -1,5 +1,5 @@
 import { poseLandmarks } from '@/interface/poseLandmarksInterface';
-import { leftHandLandmarks, rightHandLandmarks } from '@/interface/handLandmarksInterface';
+import { leftHandLandmarks, rightHandLandmarks, handGestures } from '@/interface/handLandmarksInterface';
 import { socket } from '@/socket';
 
 export function connect() {
@@ -15,14 +15,7 @@ export function sub(camId: string) {
 }
 
 socket.on('landmarks', message => {
-  // Object.keys(leftHandLandmarks).forEach((key) => {
-  //   leftHandLandmarks[key].exist = false;
-  // });
-  //
-  // Object.keys(rightHandLandmarks).forEach((key) => {
-  //   rightHandLandmarks[key].exist = false;
-  // });
-
+  // Pose landmarks
   Object.keys(poseLandmarks).forEach((key, index) => {
     if (message.pose_landmarks.length <= 0) {
       poseLandmarks[key].exist = false;
@@ -60,4 +53,7 @@ socket.on('landmarks', message => {
       message.hand_landmarks.right[index]['z'],
     ]
   })
+  // Hand gestures
+  handGestures['right'] = message.hand_gestures.right
+  handGestures['left'] = message.hand_gestures.left
 })
