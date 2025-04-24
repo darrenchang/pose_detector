@@ -24,6 +24,7 @@
           <n-button class="pointer-events-auto!" @click="zoom(-1)" strong secondary>
             Zoom Out
           </n-button>
+          <n-tag>{{ pdfZoomScale }}</n-tag>
           <n-button class="pointer-events-auto!" @click="zoom(1)" strong secondary>
             Zoom In
           </n-button>
@@ -75,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { NLayoutContent, NProgress, NButton, NSlider  } from 'naive-ui';
+import { NLayoutContent, NProgress, NButton, NSlider, NTag } from 'naive-ui';
 import type { Ref, ComputedRef } from 'vue';
 import { computed, onMounted, ref, shallowRef, watch, watchEffect } from 'vue';
 import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
