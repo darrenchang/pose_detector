@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { NLayoutContent, NProgress, NButton, NSlider, NIcon } from 'naive-ui';
+import { NLayoutContent, NProgress, NButton, NSlider, NIcon, NTag } from 'naive-ui';
 import type { Ref, ComputedRef } from 'vue';
 import { computed, onMounted, ref, shallowRef, watch, watchEffect } from 'vue';
 import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
@@ -356,7 +356,7 @@ const updateLandmarks = (groupRef, landmarks, delta, smooth_speed = -1, offsetPo
 };
 
 // Dwell activation methods
-const pageTurnDwellCheck = (action: String, _dwellTimer, delta: number) => {
+const pageTurnDwellCheck = (action: string, _dwellTimer, delta: number) => {
   let gesture = undefined;
   let pageTurnFunction = nextPage;
   if (action === "nextPage") {
@@ -377,7 +377,7 @@ const pageTurnDwellCheck = (action: String, _dwellTimer, delta: number) => {
     _dwellTimer.currentAccTime = 0;
   }
 };
-const zoomDwellCheck = (action: String, _dwellTimer, delta: number) => {
+const zoomDwellCheck = (action: string, _dwellTimer, delta: number) => {
   let gesture = undefined;
   let zoomGesture = ""
   let zoomValue = 1;
