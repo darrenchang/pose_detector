@@ -23,14 +23,14 @@
           </n-progress>
         </div>
       </div>
-      <div class="grid grid-cols-6 w-full gap-4 absolute top-[5px]">
+      <div class="grid grid-cols-6 gap-4 absolute top-[5px] z-[1] bg-[#2A2A2E]">
         <div class="col-span-6">
-          <n-button class="pointer-events-auto!" @click="zoom(-1)" strong secondary>
-            Zoom Out
+          <n-button class="pointer-events-auto! rounded-none" @click="zoom(-1)">
+            -
           </n-button>
-          <n-tag>{{ pdfZoomScale }}</n-tag>
-          <n-button class="pointer-events-auto!" @click="zoom(1)" strong secondary>
-            Zoom In
+          <n-tag class="h-[34px] rounded-none border-y-1 border-[#5D5D60] bg-[#2A2A2E]" :bordered="false">{{ pdfZoomScale }}</n-tag>
+          <n-button class="pointer-events-auto! rounded-none" @click="zoom(1)">
+            +
           </n-button>
         </div>
         <!-- <n-slider class="pointer-events-auto!" :min="pdfZoomScaleMin" :max="pdfZoomScaleMax" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" /> -->
