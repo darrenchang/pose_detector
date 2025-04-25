@@ -66,7 +66,7 @@
       </TresCanvas>
     </div>
     <n-layout-content>
-      <div class="w-full h-full overflow-auto">
+      <div v-dragscroll="true" class="w-full h-full overflow-auto">
         <div ref="pdfLayersWrapper" class="border-none w-full h-full mx-auto">
           <div class="pdf__canvas-layer m-auto" :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
             <canvas ref="canvasLayer"/>
