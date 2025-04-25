@@ -1,25 +1,28 @@
 <template>
-  <n-layout>
-    <div>
-      <n-tabs type="line" @update:value="handleUpdate" default-value="" v-model:value="currentRouteName" size="large">
-        <n-tab name="pose" tab="Pose"></n-tab>
-        <n-tab name="pdf" tab="PDF"></n-tab>
-        <n-tab name="swaggerui" tab="SwaggerUI"></n-tab>
-      </n-tabs>
-    </div>
-    <router-view v-slot="{ Component }">
-      <transition>
-        <component :is="Component"/>
-      </transition>
-    </router-view>
-  </n-layout>
+  <n-config-provider :theme="darkTheme" :theme-overrides="defaultTheme" inline-theme-disabled>
+    <n-layout>
+      <div>
+        <n-tabs type="line" @update:value="handleUpdate" default-value="" v-model:value="currentRouteName" size="large">
+          <n-tab name="pose" tab="Pose"></n-tab>
+          <n-tab name="pdf" tab="PDF"></n-tab>
+          <n-tab name="swaggerui" tab="SwaggerUI"></n-tab>
+        </n-tabs>
+      </div>
+      <router-view v-slot="{ Component }">
+        <transition>
+          <component :is="Component"/>
+        </transition>
+      </router-view>
+    </n-layout>
+  </n-config-provider>
 </template>
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
-import { NLayout, NTabs, NTab } from 'naive-ui';
+import { darkTheme, NConfigProvider, NLayout, NTabs, NTab } from 'naive-ui';
 import { ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { defaultTheme } from '@/assets/themes/default';
 
 const route = useRoute();
 const router = useRouter();

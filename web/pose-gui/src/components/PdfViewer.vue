@@ -67,7 +67,7 @@
     </div>
     <n-layout-content>
       <div class="w-full h-full overflow-auto">
-        <div ref="pdfLayersWrapper" class="border-none w-full h-full m-auto" :class="{'flex justify-center': false}">
+        <div ref="pdfLayersWrapper" class="border-none w-full h-full mx-auto">
           <div class="pdf__canvas-layer m-auto" :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
             <canvas ref="canvasLayer"/>
           </div>
