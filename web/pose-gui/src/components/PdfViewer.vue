@@ -36,7 +36,7 @@
         <!-- <n-slider class="pointer-events-auto!" :min="pdfZoomScaleMin" :max="pdfZoomScaleMax" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" /> -->
       </div>
       <div class="grid grid-cols-6 w-full gap-4 absolute bottom-[20px]">
-        <n-progress class="col-span-6" type="line" indicator-placement="inside" :show-indicator="true" :percentage="currentPageProgress">
+        <n-progress class="col-span-4 col-start-2" type="line" indicator-placement="inside" :show-indicator="true" :percentage="currentPageProgress">
           {{ currentPage }}/{{ totalPages }}
         </n-progress>
       </div>
