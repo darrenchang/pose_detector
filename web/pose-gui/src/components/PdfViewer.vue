@@ -35,7 +35,7 @@
                 </n-button>
               </div>
             </div>
-            <div class="border-[0.5px] border-[#4E4E55]" />
+            <div class="border-[0.5px] border-[#4E4E55]"/>
             <div class="flex">
               <n-button class="pointer-events-auto! rounded-none" @click="prevPage" secondary>
                 <n-icon :size="10" color="`#EBEBEB`">
@@ -63,6 +63,13 @@
                 </n-button>
               </div>
             </div>
+            <div class="border-[0.5px] border-[#4E4E55]"/>
+            <n-button class="pointer-events-auto! rounded-none" @click="isDrag = !isDrag" secondary>
+              <n-icon :size="10" color="`#EBEBEB`">
+                <HandRightOutline v-if="isDrag"/>
+                <CursorText v-else/>
+              </n-icon>
+            </n-button>
           </div>
         </div>
         <!-- <n-slider class="pointer-events-auto!" :min="pdfZoomScaleMin" :max="pdfZoomScaleMax" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" /> -->
@@ -75,7 +82,7 @@
       </div>
     </div>
     <div class="overlay absolute w-full h-full z-255">
-      <TresCanvas>
+      <TresCanvas render-mode="manual">
         <TresPerspectiveCamera :position="[0, 0, 6]" :fov="30" :look-at="[0, 0, 0]"/>
         <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]" :visible="false">
           <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
@@ -99,9 +106,10 @@
       </TresCanvas>
     </div>
     <n-layout-content>
-      <div v-dragscroll="true" class="w-full h-full overflow-auto">
+      <div v-dragscroll="isDrag" class="w-full h-full overflow-auto">
         <div ref="pdfLayersWrapper" class="border-none w-full h-full mx-auto">
-          <div class="pdf__canvas-layer m-auto grabbable" :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
+          <div class="pdf__canvas-layer m-auto" :class="{'grabbable' : isDrag }"
+               :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
             <canvas ref="canvasLayer"/>
           </div>
           <div ref="textLayer" class="pdf__text-layer hidden"></div>
@@ -121,7 +129,8 @@ import { poseLandmarks } from '@/interface/poseLandmarksInterface';
 import { leftHandLandmarks, rightHandLandmarks, handGestures } from '@/interface/handLandmarksInterface';
 import { TresCanvas, useRenderLoop } from '@tresjs/core';
 import { ArrowBackIosNewFilled, ArrowForwardIosOutlined } from '@vicons/material';
-import { AddOutline, RemoveOutline } from '@vicons/ionicons5';
+import { AddOutline, RemoveOutline, HandRightOutline } from '@vicons/ionicons5';
+import { CursorText } from '@vicons/tabler';
 
 const pdfLayersWrapper: Ref<any> = ref(null);
 const canvasLayer: Ref<any> = ref(null);
@@ -138,6 +147,7 @@ const pdfHeight: Ref<number> = ref(0);
 const pdfZoomScale: Ref<number> = ref(1);
 const pdfZoomScaleMax = 10;
 const pdfZoomScaleMin = 1;
+const isDrag: Ref<boolean> = ref(true);
 
 interface dwellTimerData {
   "nextPage": {
