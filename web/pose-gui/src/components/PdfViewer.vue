@@ -2,41 +2,74 @@
   <n-layout-content>
     <div class="overlay absolute w-full h-full z-1">
       <div class="grid grid-cols-6 h-full">
-        <div class="flex justify-center items-center">
-          <n-progress type="circle" :percentage="prevProgress" :color="dwellTimer.prevPage.progressColor">
-            <n-button class="pointer-events-auto!" :on-click="prevPage" secondary text>
-              <n-icon class="pointer-events-auto!" :on-click="prevPage" :size="40" color="`#EBEBEB`">
-                <ArrowBackIosNewFilled/>
-              </n-icon>
-            </n-button>
-          </n-progress>
-        </div>
         <div class="border-none m-auto col-span-4">
         </div>
-        <div class="flex justify-center items-center">
-          <n-progress type="circle" :percentage="nextProgress" :color="dwellTimer.nextPage.progressColor">
-            <n-button text class="pointer-events-auto!" :on-click="nextPage" strong secondary>
-              <n-icon :size="40" color="`#EBEBEB`">
-                <ArrowForwardIosOutlined/>
-              </n-icon>
-            </n-button>
-          </n-progress>
-        </div>
       </div>
-      <div class="grid grid-cols-6 gap-4 absolute top-[5px] z-[1] bg-[#2A2A2E]">
+      <div class="grid grid-cols-6 gap-4 absolute top-[5px] z-[1] bg-[#2A2A2E] p-[0.5rem]">
         <div class="col-span-6">
-          <n-button class="pointer-events-auto! rounded-none" @click="zoom(-1)">
-            -
-          </n-button>
-          <n-tag class="h-[34px] rounded-none border-y-1 border-[#5D5D60] bg-[#2A2A2E]" :bordered="false">{{ pdfZoomScale }}</n-tag>
-          <n-button class="pointer-events-auto! rounded-none" @click="zoom(1)">
-            +
-          </n-button>
+          <div class="flex gap-x-[0.5rem]">
+            <div class="flex">
+              <n-button class="pointer-events-auto! rounded-none" @click="zoom(-1)" secondary>
+                <n-icon :size="10" color="`#EBEBEB`">
+                  <RemoveOutline/>
+                </n-icon>
+                <div class="btn-progress overlay absolute w-full h-full left-[0] right-[0]">
+                  <n-progress border-radius="0 0 0 0" class="h-full" type="line" :percentage="ZoomOutProgress"
+                              :color="dwellTimer.zoomOut.progressColor"
+                              :show-indicator="false"/>
+                </div>
+              </n-button>
+              <n-tag class="h-[34px] text-center rounded-none border-y-1 border-[#2A2A2E] bg-[#2A2A2E]"
+                     :bordered="false">{{ pdfZoomScale }}
+              </n-tag>
+              <div>
+                <n-button class="pointer-events-auto! rounded-none" @click="zoom(1)" secondary>
+                  <n-icon :size="10" color="`#EBEBEB`">
+                    <AddOutline/>
+                  </n-icon>
+                  <div class="btn-progress overlay absolute w-full h-full left-[0] right-[0]">
+                    <n-progress border-radius="0 0 0 0" class="h-full" type="line" :percentage="ZoomInProgress"
+                                :color="dwellTimer.zoomIn.progressColor"
+                                :show-indicator="false"/>
+                  </div>
+                </n-button>
+              </div>
+            </div>
+            <div class="border-[0.5px] border-[#4E4E55]" />
+            <div class="flex">
+              <n-button class="pointer-events-auto! rounded-none" @click="prevPage" secondary>
+                <n-icon :size="10" color="`#EBEBEB`">
+                  <ArrowBackIosNewFilled/>
+                </n-icon>
+                <div class="btn-progress overlay absolute w-full h-full left-[0] right-[0]">
+                  <n-progress border-radius="0 0 0 0" class="h-full" type="line" :percentage="prevProgress"
+                              :color="dwellTimer.prevPage.progressColor"
+                              :show-indicator="false"/>
+                </div>
+              </n-button>
+              <n-tag class="h-[34px] text-center rounded-none border-y-1 border-[#2A2A2E] bg-[#2A2A2E]"
+                     :bordered="false">{{ currentPage }}
+              </n-tag>
+              <div>
+                <n-button class="pointer-events-auto! rounded-none" @click="nextPage" secondary>
+                  <n-icon :size="10" color="`#EBEBEB`">
+                    <ArrowForwardIosOutlined/>
+                  </n-icon>
+                  <div class="btn-progress overlay absolute w-full h-full left-[0] right-[0]">
+                    <n-progress border-radius="0 0 0 0" class="h-full" type="line" :percentage="nextProgress"
+                                :color="dwellTimer.nextPage.progressColor"
+                                :show-indicator="false"/>
+                  </div>
+                </n-button>
+              </div>
+            </div>
+          </div>
         </div>
         <!-- <n-slider class="pointer-events-auto!" :min="pdfZoomScaleMin" :max="pdfZoomScaleMax" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" /> -->
       </div>
       <div class="grid grid-cols-6 w-full gap-4 absolute bottom-[20px]">
-        <n-progress class="col-span-4 col-start-2" type="line" indicator-placement="inside" :show-indicator="true" :percentage="currentPageProgress">
+        <n-progress class="col-span-4 col-start-2" type="line" indicator-placement="inside" :show-indicator="true"
+                    :percentage="currentPageProgress">
           {{ currentPage }}/{{ totalPages }}
         </n-progress>
       </div>
@@ -68,7 +101,7 @@
     <n-layout-content>
       <div v-dragscroll="true" class="w-full h-full overflow-auto">
         <div ref="pdfLayersWrapper" class="border-none w-full h-full mx-auto">
-          <div class="pdf__canvas-layer m-auto" :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
+          <div class="pdf__canvas-layer m-auto grabbable" :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
             <canvas ref="canvasLayer"/>
           </div>
           <div ref="textLayer" class="pdf__text-layer hidden"></div>
@@ -88,6 +121,7 @@ import { poseLandmarks } from '@/interface/poseLandmarksInterface';
 import { leftHandLandmarks, rightHandLandmarks, handGestures } from '@/interface/handLandmarksInterface';
 import { TresCanvas, useRenderLoop } from '@tresjs/core';
 import { ArrowBackIosNewFilled, ArrowForwardIosOutlined } from '@vicons/material';
+import { AddOutline, RemoveOutline } from '@vicons/ionicons5';
 
 const pdfLayersWrapper: Ref<any> = ref(null);
 const canvasLayer: Ref<any> = ref(null);
@@ -101,9 +135,9 @@ const currentPage: Ref<number> = ref(1);
 const totalPages: Ref<number> = ref(3);
 const pdfWidth: Ref<number> = ref(0);
 const pdfHeight: Ref<number> = ref(0);
-const pdfZoomScale:Ref<number> = ref(1);
-const pdfZoomScaleMax = 10
-const pdfZoomScaleMin = 1
+const pdfZoomScale: Ref<number> = ref(1);
+const pdfZoomScaleMax = 10;
+const pdfZoomScaleMin = 1;
 
 interface dwellTimerData {
   "nextPage": {
@@ -116,7 +150,16 @@ interface dwellTimerData {
     triggerTime: number
     progressColor: string
   }
-
+  "zoomIn": {
+    currentAccTime: number
+    triggerTime: number
+    progressColor: string
+  }
+  "zoomOut": {
+    currentAccTime: number
+    triggerTime: number
+    progressColor: string
+  }
 }
 
 const dwellTimer: Ref<dwellTimerData> = ref({
@@ -132,12 +175,12 @@ const dwellTimer: Ref<dwellTimerData> = ref({
   },
   zoomIn: {
     currentAccTime: 0,
-    triggerTime: 1,
+    triggerTime: 3,
     progressColor: '#007bff',
   },
   zoomOut: {
     currentAccTime: 0,
-    triggerTime: 1,
+    triggerTime: 3,
     progressColor: '#007bff',
   }
 });
@@ -154,25 +197,23 @@ const prevPage = () => {
   }
 };
 const zoom = (value) => {
-  let newScale = pdfZoomScale.value + value
-  if (newScale > pdfZoomScaleMax) {
+  let newScale = pdfZoomScale.value + value;
+  if(newScale > pdfZoomScaleMax) {
     pdfZoomScale.value = pdfZoomScaleMax;
-  }
-  else if (newScale < pdfZoomScaleMin) {
+  } else if(newScale < pdfZoomScaleMin) {
     pdfZoomScale.value = pdfZoomScaleMin;
-  }
-  else {
+  } else {
     pdfZoomScale.value = newScale;
   }
-}
+};
 
 const getPageProgress = (): number => {
-  return (currentPage.value / totalPages.value) * 100
+  return (currentPage.value / totalPages.value) * 100;
 };
 const currentPageProgress: ComputedRef<number> = computed(() => getPageProgress());
 const getProgress = (timer, triggerTime): number => {
-  const progressStep = 3
-  const snapStep = (Math.floor(100 / progressStep) - 2) * progressStep
+  const progressStep = 3;
+  const snapStep = (Math.floor(100 / progressStep) - 2) * progressStep;
   const progress: number = Math.floor(timer * 100 / (triggerTime * progressStep)) * progressStep;
   return progress >= snapStep ? 100 : progress;
 };
@@ -183,6 +224,14 @@ const nextProgress: ComputedRef<number> = computed(() => getProgress(
 const prevProgress: ComputedRef<number> = computed(() => getProgress(
   dwellTimer.value.prevPage.currentAccTime,
   dwellTimer.value.prevPage.triggerTime,
+));
+const ZoomInProgress: ComputedRef<number> = computed(() => getProgress(
+  dwellTimer.value.zoomIn.currentAccTime,
+  dwellTimer.value.zoomIn.triggerTime,
+));
+const ZoomOutProgress: ComputedRef<number> = computed(() => getProgress(
+  dwellTimer.value.zoomOut.currentAccTime,
+  dwellTimer.value.zoomOut.triggerTime,
 ));
 const updateProgressColor = (page: dwellTimerData["nextPage"] | dwellTimerData["prevPage"], progressValue: number): void => {
   page.progressColor = (progressValue === 100) ? '#27bd01' : '#007bff';
@@ -325,11 +374,10 @@ const getCenter = (points: number[][]): { "x": number, "y": number, "z": number 
 };
 
 const smoothing = (start: number, end: number, delta: number, speed_override = -1) => {
-  let speed = 10
-  if (speed_override === -1) {
+  let speed = 10;
+  if(speed_override === -1) {
     speed = Math.min(Math.max(end - start * 2, 7), 10);
-  }
-  else {
+  } else {
     speed = speed_override;
   }
   const alpha = 1 - Math.exp(-speed * delta);
@@ -359,14 +407,14 @@ const updateLandmarks = (groupRef, landmarks, delta, smooth_speed = -1, offsetPo
 const pageTurnDwellCheck = (action: string, _dwellTimer, delta: number) => {
   let gesture = undefined;
   let pageTurnFunction = nextPage;
-  if (action === "nextPage") {
+  if(action === "nextPage") {
     pageTurnFunction = nextPage;
     gesture = handGestures.right;
   } else if(action === "prevPage") {
     pageTurnFunction = prevPage;
     gesture = handGestures.left;
   }
-  const isInZone = gesture === "pointing_up"
+  const isInZone = gesture === "pointing_up";
   if(isInZone) {
     _dwellTimer.currentAccTime += delta;
   } else {
@@ -379,25 +427,24 @@ const pageTurnDwellCheck = (action: string, _dwellTimer, delta: number) => {
 };
 const zoomDwellCheck = (action: string, _dwellTimer, delta: number) => {
   let gesture = undefined;
-  let zoomGesture = ""
+  let zoomGesture = "";
   let zoomValue = 1;
-  if (action === "zoomIn") {
-    zoomGesture = "thumb_up"
+  if(action === "zoomIn") {
+    zoomGesture = "thumb_up";
     zoomValue = 1;
   }
-  if (action === "zoomOut") {
-    zoomGesture = "thumb_down"
+  if(action === "zoomOut") {
+    zoomGesture = "thumb_down";
     zoomValue = -1;
   }
-  const isDwelling = (handGestures.right === zoomGesture || handGestures.left === zoomGesture)
-  if (isDwelling) {
+  const isDwelling = (handGestures.right === zoomGesture || handGestures.left === zoomGesture);
+  if(isDwelling) {
     _dwellTimer.currentAccTime += delta;
-  }
-  else {
+  } else {
     _dwellTimer.currentAccTime = 0;
   }
-  if (_dwellTimer.currentAccTime > _dwellTimer.triggerTime) {
-    zoom(zoomValue)
+  if(_dwellTimer.currentAccTime > _dwellTimer.triggerTime) {
+    zoom(zoomValue);
     _dwellTimer.currentAccTime = 0;
   }
 };
@@ -423,7 +470,7 @@ onLoop(({ delta, elapsed }) => {
     "x": canvasToPoseCoord(leftWrist.position.x, canvas_factor),
     "y": canvasToPoseCoord(leftWrist.position.y, canvas_factor),
     "z": canvasToPoseCoord(leftWrist.position.z, canvas_factor),
-  }
+  };
   updateLandmarks(leftHandLandmarksGroupRef, leftHandLandmarks, delta, 50, leftPalmOffset);
 
   const rightWrist = poseLandmarksGroupRef.value.children.reduce((acc, cur) => {
@@ -437,7 +484,7 @@ onLoop(({ delta, elapsed }) => {
     "x": canvasToPoseCoord(rightWrist.position.x, canvas_factor),
     "y": canvasToPoseCoord(rightWrist.position.y, canvas_factor),
     "z": canvasToPoseCoord(rightWrist.position.z, canvas_factor),
-  }
+  };
   updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, delta, 50, rightPalmOffset);
   // Check dwell activation
   pageTurnDwellCheck("nextPage", dwellTimer.value.nextPage, delta);
@@ -461,6 +508,8 @@ watch(pdfZoomScale, async (_) => {
 watchEffect(() => {
   updateProgressColor(dwellTimer.value.nextPage, nextProgress.value);
   updateProgressColor(dwellTimer.value.prevPage, prevProgress.value);
+  updateProgressColor(dwellTimer.value.zoomIn, ZoomInProgress.value);
+  updateProgressColor(dwellTimer.value.zoomOut, ZoomOutProgress.value);
 });
 
 onMounted(async () => {
@@ -480,6 +529,30 @@ onMounted(async () => {
 
 canvas {
   pointer-events: none !important;
+}
+
+.grabbable {
+  cursor: move;
+  cursor: grab;
+}
+
+.grabbable:active {
+  cursor: grabbing;
+}
+</style>
+
+<style>
+.btn-progress .n-progress,
+.btn-progress .n-progress .n-progress-content,
+.btn-progress .n-progress .n-progress-content .n-progress-graph,
+.btn-progress .n-progress .n-progress-content .n-progress-graph .n-progress-graph-line,
+.btn-progress .n-progress .n-progress-content .n-progress-graph .n-progress-graph-line .n-progress-graph-line-rail {
+  z-index: -1;
+  height: 100%;
+}
+
+.btn-progress .n-progress .n-progress-content .n-progress-graph .n-progress-graph-line .n-progress-graph-line-rail {
+  background-color: transparent;
 }
 </style>
 

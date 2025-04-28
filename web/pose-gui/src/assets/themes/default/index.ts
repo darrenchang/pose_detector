@@ -13,4 +13,7 @@ export const defaultTheme:GlobalThemeOverrides = {
   Layout: {
     color: '#2A2A2E',
   },
+  Progress: {
+    railColor: 'transparent'
+  }
 };
