@@ -70,6 +70,9 @@
                 <CursorText v-else/>
               </n-icon>
             </n-button>
+            <button class="pointer-events-auto! rounded-none" @click="scrollPdf">
+              scrollBy
+            </button>
           </div>
         </div>
         <!-- <n-slider class="pointer-events-auto!" :min="pdfZoomScaleMin" :max="pdfZoomScaleMax" :default-value="pdfZoomScale" v-model:value="pdfZoomScale" :step="1" /> -->
@@ -106,7 +109,7 @@
       </TresCanvas>
     </div>
     <n-layout-content>
-      <div v-dragscroll="isDrag" class="w-full h-full overflow-auto">
+      <div ref="scrollContainer" v-dragscroll="isDrag" class="w-full h-full overflow-auto">
         <div ref="pdfLayersWrapper" class="border-none w-full h-full mx-auto">
           <div class="pdf__canvas-layer m-auto" :class="{'grabbable' : isDrag }"
                :style="{ width: `${pdfWidth}px`, height: `${pdfHeight}px` }">
@@ -134,6 +137,7 @@ import { CursorText } from '@vicons/tabler';
 
 const pdfLayersWrapper: Ref<any> = ref(null);
 const canvasLayer: Ref<any> = ref(null);
+const scrollContainer: Ref<any> = ref(null);
 const textLayer: Ref<any> = ref(null);
 const annotationLayer: Ref<any> = ref(null);
 const pdfSrc: string = 'https://pdfobject.com/pdf/pdf_open_parameters_acro8.pdf';
@@ -382,6 +386,14 @@ const getCenter = (points: number[][]): { "x": number, "y": number, "z": number 
     z: pointSum["z_sum"] / points.length,
   };
 };
+
+const scrollPdf = (x, y) => {
+  console.log('scrollContainer');
+  scrollContainer.value.scrollBy({
+    left: 100,
+    behavior: 'smooth'
+  });
+}
 
 const smoothing = (start: number, end: number, delta: number, speed_override = -1) => {
   let speed = 10;
