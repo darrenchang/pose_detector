@@ -85,7 +85,7 @@
       </div>
     </div>
     <div class="overlay absolute w-full h-full z-255">
-      <TresCanvas render-mode="manual">
+      <TresCanvas>
         <TresPerspectiveCamera :position="[0, 0, 6]" :fov="30" :look-at="[0, 0, 0]"/>
         <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]" :visible="false">
           <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
