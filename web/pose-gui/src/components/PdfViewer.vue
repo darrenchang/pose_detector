@@ -9,67 +9,70 @@
         <div class="col-span-6">
           <div class="flex gap-x-[0.5rem]">
             <div class="flex">
-              <n-button class="pointer-events-auto! rounded-none" @click="zoom(-1)" secondary>
-                <n-icon :size="10" color="`#EBEBEB`">
-                  <RemoveOutline/>
-                </n-icon>
-                <div class="btn-progress overlay absolute w-full h-full left-[0] right-[0]">
-                  <n-progress border-radius="0 0 0 0" class="h-full" type="line" :percentage="ZoomOutProgress"
-                              :color="dwellTimer.zoomOut.progressColor"
-                              :show-indicator="false"/>
-                </div>
-              </n-button>
+              <PdfProgressButton
+                :btnEvent="()=>zoom(-1)"
+                :progressPercentage="ZoomOutProgress"
+                :progressColor="dwellTimer.zoomOut.progressColor">
+                <template #icon>
+                  <n-icon :size="10" color="`#EBEBEB`">
+                    <RemoveOutline/>
+                  </n-icon>
+                </template>
+              </PdfProgressButton>
               <n-tag class="h-[34px] text-center rounded-none border-y-1 border-[#2A2A2E] bg-[#2A2A2E]"
                      :bordered="false">{{ pdfZoomScale }}
               </n-tag>
               <div>
-                <n-button class="pointer-events-auto! rounded-none" @click="zoom(1)" secondary>
-                  <n-icon :size="10" color="`#EBEBEB`">
-                    <AddOutline/>
-                  </n-icon>
-                  <div class="btn-progress overlay absolute w-full h-full left-[0] right-[0]">
-                    <n-progress border-radius="0 0 0 0" class="h-full" type="line" :percentage="ZoomInProgress"
-                                :color="dwellTimer.zoomIn.progressColor"
-                                :show-indicator="false"/>
-                  </div>
-                </n-button>
+                <PdfProgressButton
+                  :btnEvent="()=>zoom(1)"
+                  :progressPercentage="ZoomInProgress"
+                  :progressColor="dwellTimer.zoomIn.progressColor">
+                  <template #icon>
+                    <n-icon :size="10" color="`#EBEBEB`">
+                      <AddOutline/>
+                    </n-icon>
+                  </template>
+                </PdfProgressButton>
               </div>
             </div>
             <div class="border-[0.5px] border-[#4E4E55]"/>
             <div class="flex">
-              <n-button class="pointer-events-auto! rounded-none" @click="prevPage" secondary>
-                <n-icon :size="10" color="`#EBEBEB`">
-                  <ArrowBackIosNewFilled/>
-                </n-icon>
-                <div class="btn-progress overlay absolute w-full h-full left-[0] right-[0]">
-                  <n-progress border-radius="0 0 0 0" class="h-full" type="line" :percentage="prevProgress"
-                              :color="dwellTimer.prevPage.progressColor"
-                              :show-indicator="false"/>
-                </div>
-              </n-button>
+              <PdfProgressButton
+                :btnEvent="prevPage"
+                :progressPercentage="prevProgress"
+                :progressColor="dwellTimer.prevPage.progressColor">
+                <template #icon>
+                  <n-icon :size="10" color="`#EBEBEB`">
+                    <ArrowBackIosNewFilled/>
+                  </n-icon>
+                </template>
+              </PdfProgressButton>
               <n-tag class="h-[34px] text-center rounded-none border-y-1 border-[#2A2A2E] bg-[#2A2A2E]"
                      :bordered="false">{{ currentPage }}
               </n-tag>
-              <div>
-                <n-button class="pointer-events-auto! rounded-none" @click="nextPage" secondary>
+              <PdfProgressButton
+                :btnEvent="nextPage"
+                :progressPercentage="nextProgress"
+                :progressColor="dwellTimer.nextPage.progressColor">
+                <template #icon>
                   <n-icon :size="10" color="`#EBEBEB`">
                     <ArrowForwardIosOutlined/>
                   </n-icon>
-                  <div class="btn-progress overlay absolute w-full h-full left-[0] right-[0]">
-                    <n-progress border-radius="0 0 0 0" class="h-full" type="line" :percentage="nextProgress"
-                                :color="dwellTimer.nextPage.progressColor"
-                                :show-indicator="false"/>
-                  </div>
-                </n-button>
-              </div>
+                </template>
+              </PdfProgressButton>
             </div>
             <div class="border-[0.5px] border-[#4E4E55]"/>
-            <n-button class="pointer-events-auto! rounded-none" @click="isDrag = !isDrag" secondary>
-              <n-icon :size="10" color="`#EBEBEB`">
-                <HandRightOutline v-if="isDrag"/>
-                <CursorText v-else/>
-              </n-icon>
-            </n-button>
+            <PdfProgressButton
+              :btnEvent="()=>isDrag = !isDrag"
+              :progressPercentage="0"
+              :progressColor="`transparent`">
+              <template #icon>
+                <n-icon :size="10" color="`#EBEBEB`">
+                  <HandRightOutline v-if="isDrag"/>
+                  <CursorText v-else/>
+                </n-icon>
+              </template>
+            </PdfProgressButton>
             <button class="pointer-events-auto! rounded-none" @click="scrollPdf">
               scrollBy
             </button>
@@ -85,7 +88,7 @@
       </div>
     </div>
     <div class="overlay absolute w-full h-full z-255">
-      <TresCanvas>
+      <TresCanvas render-mode="manual">
         <TresPerspectiveCamera :position="[0, 0, 6]" :fov="30" :look-at="[0, 0, 0]"/>
         <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]" :visible="false">
           <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
@@ -134,6 +137,7 @@ import { TresCanvas, useRenderLoop } from '@tresjs/core';
 import { ArrowBackIosNewFilled, ArrowForwardIosOutlined } from '@vicons/material';
 import { AddOutline, RemoveOutline, HandRightOutline } from '@vicons/ionicons5';
 import { CursorText } from '@vicons/tabler';
+import PdfProgressButton from '@/components/PdfProgressButton.vue';
 
 const pdfLayersWrapper: Ref<any> = ref(null);
 const canvasLayer: Ref<any> = ref(null);
@@ -393,7 +397,7 @@ const scrollPdf = (x, y) => {
     left: 100,
     behavior: 'smooth'
   });
-}
+};
 
 const smoothing = (start: number, end: number, delta: number, speed_override = -1) => {
   let speed = 10;
