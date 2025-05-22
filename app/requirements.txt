@@ -9,3 +9,4 @@ Flask-SocketIO==5.4.1
 flask-session==0.8.0
 redis==5.1.1
 redislite @ git+https://github.com/darrenchang/redislite.git@update-redis
+requests==2.32.3
