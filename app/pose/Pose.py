@@ -63,21 +63,22 @@ class Pose:
     ]
 
     def __init__(self):
-        mp_pose = mp.solutions.pose
-        pose_options = {
-            "static_image_mode": True,
-            "min_detection_confidence": 0.5,
-            "min_tracking_confidence": 0.5,
-            "enable_segmentation": True,
-            "model_complexity": 0,
-        }
-        self.pose = mp_pose.Pose(**pose_options)
+        self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.download_model(output_path=self.current_dir)
+        self.base_options = python.BaseOptions(model_asset_path=f"{self.current_dir}/pose_landmarker_heavy.task")
+        self.options = vision.PoseLandmarkerOptions(
+            base_options=self.base_options,
+            output_segmentation_masks=True,
+        )
+        self.recognizer = vision.PoseLandmarker.create_from_options(self.options)
 
     def inference(self, im):
-        results = self.pose.process(im)
+        cv_img_rgb = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv_img_rgb)
+        results = self.recognizer.detect(mp_image)
         landmarks = []
-        if results.pose_landmarks is not None:
-            for i, landmark in enumerate(results.pose_landmarks.landmark):
+        if len(results.pose_landmarks) > 0:
+            for i, landmark in enumerate(results.pose_landmarks[0]):
                 landmarks.append(
                     {
                         "index": i,
@@ -89,6 +90,27 @@ class Pose:
                     }
                 )
         return landmarks
+
+    def download_model(self, output_path: str):
+        gesture_recognizer_model_url = (
+            "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/"
+            "pose_landmarker_heavy.task"
+        )
+        model_file = f"{output_path}/pose_landmarker_heavy.task"
+        if Path(model_file).exists():
+            logger.info(f"The pose_landmarker file {model_file} is found. Skipping download.")
+            return
+        session = requests.Session()
+        with session.get(gesture_recognizer_model_url, stream=True) as r:
+            if r.status_code == 200:
+                logger.info("Downloading the pose_landmarker model...")
+                with open(model_file, "wb") as fd:
+                    for chunk in r.iter_content(chunk_size=16 * 1024):
+                        fd.write(chunk)
+            else:
+                logger.warning(f"Failed to download pose_landmarker model. HTTP status code: {r.status_code}")
+        return
+
 
 
 class Hand:

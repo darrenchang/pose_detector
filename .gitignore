@@ -6,5 +6,5 @@ app/build/
 app/pose.egg-info/
 app/flask_session
 app/videos/*.mp4
-app/pose/hand_landmarker.task
 app/pose/gesture_recognizer.task
+app/pose/pose_landmarker_heavy.task
