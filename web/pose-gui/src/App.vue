@@ -1,5 +1,5 @@
 <template>
-  <n-config-provider :theme="darkTheme" :theme-overrides="defaultTheme" inline-theme-disabled>
+  <n-config-provider :theme="lightTheme" :theme-overrides="defaultTheme" inline-theme-disabled>
     <n-layout>
       <div>
         <n-tabs type="line" @update:value="handleUpdate" default-value="" v-model:value="currentRouteName" size="large">
@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
-import { darkTheme, NConfigProvider, NLayout, NTabs, NTab } from 'naive-ui';
+import { lightTheme, NConfigProvider, NLayout, NTabs, NTab } from 'naive-ui';
 import { ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { defaultTheme } from '@/assets/themes/default';

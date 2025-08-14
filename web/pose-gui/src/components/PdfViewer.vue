@@ -5,7 +5,7 @@
         <div class="border-none m-auto col-span-4">
         </div>
       </div>
-      <div class="grid grid-cols-6 gap-4 absolute top-[5px] z-[1] bg-[#2A2A2E] p-[0.5rem]">
+      <div class="grid grid-cols-6 gap-4 absolute top-[5px] z-[1] p-[0.5rem]">
         <div class="col-span-6">
           <div class="flex gap-x-[0.5rem]">
             <div class="flex">
@@ -19,7 +19,7 @@
                   </n-icon>
                 </template>
               </PdfProgressButton>
-              <n-tag class="h-[34px] text-center rounded-none border-y-1 border-[#2A2A2E] bg-[#2A2A2E]"
+              <n-tag class="h-[34px] text-center rounded-none border-y-0"
                      :bordered="false">{{ pdfZoomScale }}
               </n-tag>
               <div>
@@ -35,7 +35,6 @@
                 </PdfProgressButton>
               </div>
             </div>
-            <div class="border-[0.5px] border-[#4E4E55]"/>
             <div class="flex">
               <PdfProgressButton
                 :btnEvent="prevPage"
@@ -47,7 +46,7 @@
                   </n-icon>
                 </template>
               </PdfProgressButton>
-              <n-tag class="h-[34px] text-center rounded-none border-y-1 border-[#2A2A2E] bg-[#2A2A2E]"
+              <n-tag class="h-[34px] text-center rounded-none border-y-0"
                      :bordered="false">{{ currentPage }}
               </n-tag>
               <PdfProgressButton
@@ -61,7 +60,6 @@
                 </template>
               </PdfProgressButton>
             </div>
-            <div class="border-[0.5px] border-[#4E4E55]"/>
             <PdfProgressButton
               :btnEvent="()=>isDrag = !isDrag"
               :progressPercentage="0"
@@ -74,7 +72,7 @@
               </template>
             </PdfProgressButton>
             <button class="pointer-events-auto! rounded-none" @click="scrollPdf">
-              scrollBy
+              scrollBy (test button)
             </button>
           </div>
         </div>
