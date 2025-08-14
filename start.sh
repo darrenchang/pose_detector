@@ -23,7 +23,7 @@ done
 # Set up python venv if not already setup
 if [ ! -d app/venv ]; then
   echo "Setting up python venv..."
-  python3 -m venv app/venv;
+  python3.12 -m venv app/venv;
   source app/venv/bin/activate;
   python -m pip install app/.;
 fi
