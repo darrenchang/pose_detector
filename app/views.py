@@ -48,7 +48,7 @@ class Login(Resource):
 class GetLandmarks(Resource):
     def get(self):
         """
-        SocketIO supported
+        ⚡ SocketIO supported
         SocketIO events:
         - `subscribe` to pose landmark updates. Data: `{"cam_id": "host_cam"}`
         - `unsubscribe` to pose landmark updates. Data: `{"cam_id": "host_cam"}`
