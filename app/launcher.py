@@ -51,17 +51,6 @@ def on_exit_factory(redis_server):
         redis_server.shutdown()
 
 
-def post_fork(server, worker):
-    # main_module = importlib.import_module("app_main")
-    # app = getattr(main_module, "app")
-    # pose_app = getattr(main_module, "pose_app")
-    # app.config["REDIS_SERVER_SOCK"] = redis_server_sock
-    # app.config["POSE_SERVICE_SOCK"] = pose_service_sock
-    # app.config["PORT"] = port
-    logger.info("Hi")
-    # pose_app.setup_socketio(channel="general")
-
-
 def get_main_app():
     import views as views
 
@@ -140,7 +129,6 @@ if __name__ == "__main__":
         "post_worker_init": post_worker_init,
         "worker_exit": worker_exit,
         "on_exit": on_exit_factory(redis_server=redis_server),
-        "post_fork": post_fork,
     }
 
     # Launch the main WSGI service
