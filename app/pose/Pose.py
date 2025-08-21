@@ -64,8 +64,12 @@ class Pose:
 
     def __init__(self):
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.download_model(output_path=self.current_dir)
-        self.base_options = python.BaseOptions(model_asset_path=f"{self.current_dir}/pose_landmarker_heavy.task")
+        # landmarker_model_bundle can be ["light", "full", "heavy"]
+        landmarker_model_bundle = "full"
+        self.download_model(output_path=self.current_dir, landmarker_model_bundle=landmarker_model_bundle)
+        self.base_options = python.BaseOptions(
+            model_asset_path=f"{self.current_dir}/pose_landmarker_{landmarker_model_bundle}.task",
+        )
         self.options = vision.PoseLandmarkerOptions(
             base_options=self.base_options,
             output_segmentation_masks=True,
@@ -91,14 +95,17 @@ class Pose:
                 )
         return landmarks
 
-    def download_model(self, output_path: str):
+    def download_model(self, output_path: str, landmarker_model_bundle: str):
         gesture_recognizer_model_url = (
-            "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/"
-            "pose_landmarker_heavy.task"
+            "https://storage.googleapis.com/mediapipe-models/pose_landmarker/"
+            f"pose_landmarker_{landmarker_model_bundle}/float16/latest/"
+            f"pose_landmarker_{landmarker_model_bundle}.task"
         )
-        model_file = f"{output_path}/pose_landmarker_heavy.task"
+        model_file = f"{output_path}/pose_landmarker_{landmarker_model_bundle}.task"
         if Path(model_file).exists():
-            logger.info(f"The pose_landmarker file {model_file} is found. Skipping download.")
+            logger.info(
+                f"The pose_landmarker file {model_file} is found. Skipping download."
+            )
             return
         session = requests.Session()
         with session.get(gesture_recognizer_model_url, stream=True) as r:
@@ -108,9 +115,10 @@ class Pose:
                     for chunk in r.iter_content(chunk_size=16 * 1024):
                         fd.write(chunk)
             else:
-                logger.warning(f"Failed to download pose_landmarker model. HTTP status code: {r.status_code}")
+                logger.warning(
+                    f"Failed to download pose_landmarker model. HTTP status code: {r.status_code}"
+                )
         return
-
 
 
 class Hand:
@@ -154,8 +162,12 @@ class Hand:
     def __init__(self):
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.download_model(output_path=self.current_dir)
-        self.base_options = python.BaseOptions(model_asset_path=f"{self.current_dir}/gesture_recognizer.task")
-        self.options = vision.GestureRecognizerOptions(base_options=self.base_options, num_hands=2)
+        self.base_options = python.BaseOptions(
+            model_asset_path=f"{self.current_dir}/gesture_recognizer.task"
+        )
+        self.options = vision.GestureRecognizerOptions(
+            base_options=self.base_options, num_hands=2
+        )
         # self.options = vision.GestureRecognizerOptions(base_options=self.base_options, num_hands=2)
         self.recognizer = vision.GestureRecognizer.create_from_options(self.options)
 
@@ -172,7 +184,9 @@ class Hand:
         }
         for i, hand in enumerate(results.handedness):
             hand_name = hand[0].display_name.lower()
-            gestures[hand_name] = self.gesture_map.get(results.gestures[i][0].category_name, "unknown")
+            gestures[hand_name] = self.gesture_map.get(
+                results.gestures[i][0].category_name, "unknown"
+            )
             for k, landmark in enumerate(results.hand_world_landmarks[i]):
                 landmarks[hand_name].append(
                     {
@@ -194,7 +208,9 @@ class Hand:
         )
         model_file = f"{output_path}/gesture_recognizer.task"
         if Path(model_file).exists():
-            logger.info(f"The gesture_recognizer file {model_file} is found. Skipping download.")
+            logger.info(
+                f"The gesture_recognizer file {model_file} is found. Skipping download."
+            )
             return
         session = requests.Session()
         with session.get(gesture_recognizer_model_url, stream=True) as r:
@@ -204,7 +220,9 @@ class Hand:
                     for chunk in r.iter_content(chunk_size=16 * 1024):
                         fd.write(chunk)
             else:
-                logger.warning(f"Failed to download gesture_recognizer model. HTTP status code: {r.status_code}")
+                logger.warning(
+                    f"Failed to download gesture_recognizer model. HTTP status code: {r.status_code}"
+                )
         return
 
 
@@ -221,7 +239,8 @@ class RpcService(rpyc.Service):
         ns_base = Namespace("base", "Namespace for registering models")
         self.model_landmarks = ns_base.model(model.landmarks.name, model.landmarks)
         pose_runner = Thread(
-            target=self.pose_detect_runner, kwargs={"redis_server_sock": redis_server_sock, "cam": cam}
+            target=self.pose_detect_runner,
+            kwargs={"redis_server_sock": redis_server_sock, "cam": cam},
         )
         pose_runner.start()
         fps_runner = Thread(target=self.display_fps, kwargs={"interval": 5})
