@@ -51,10 +51,20 @@ def on_exit_factory(redis_server):
         redis_server.shutdown()
 
 
-def get_main_app():
+def get_main_app(
+    redis_server_sock: str,
+    pose_service_sock: str,
+    port: str,
+    flask_secret: str,
+):
     import views as views
 
-    pose_app = PoseApp()
+    pose_app = PoseApp(
+        redis_server_sock,
+        pose_service_sock,
+        port,
+        flask_secret,
+    )
     app = pose_app.get_app()
     api = pose_app.get_api()
     # API registry
@@ -65,18 +75,19 @@ def get_main_app():
 
 
 def run_app(
-    app_factory,
+    app_factory: get_main_app,
     options,
-    flask_secrete,
     redis_server_sock: str,
     pose_service_sock: str,
     port: str,
+    flask_secrete: str,
 ):
-    pose_app, app = app_factory()
-    app.config["REDIS_SERVER_SOCK"] = redis_server_sock
-    app.config["POSE_SERVICE_SOCK"] = pose_service_sock
-    app.config["PORT"] = port
-    app.secret_key = flask_secrete
+    pose_app, app = app_factory(
+        redis_server_sock,
+        pose_service_sock,
+        port,
+        flask_secrete,
+    )
     pose_app.setup_socketio(channel="general")
     StandaloneApplication(app, options).run()
 
@@ -143,10 +154,10 @@ if __name__ == "__main__":
             args=(
                 app_factory,
                 opts,
-                flask_secret,
                 redis_server_sock,
                 pose_service_sock,
                 port,
+                flask_secret,
             ),
         )
         p.start()
