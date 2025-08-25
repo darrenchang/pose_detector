@@ -80,13 +80,13 @@ def run_app(
     redis_server_sock: str,
     pose_service_sock: str,
     port: str,
-    flask_secrete: str,
+    flask_secret: str,
 ):
     pose_app, app = app_factory(
         redis_server_sock,
         pose_service_sock,
         port,
-        flask_secrete,
+        flask_secret,
     )
     pose_app.setup_socketio(channel="general")
     StandaloneApplication(app, options).run()
