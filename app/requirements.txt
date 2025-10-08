@@ -2,9 +2,9 @@ opencv-python==4.10.0.84
 opencv-contrib-python==4.10.0.84
 mediapipe==0.10.21
 gunicorn==23.0.0
-rpyc==6.0.1
-flask==3.0.3
-flask-restx @ git+https://github.com/python-restx/flask-restx.git@f1eeaa0d003838756298975bc6c1e06e3b286d65
+rpyc==6.0.2
+flask==3.1.2
+flask-restx @ git+https://github.com/empirica-lab/flask-restx.git@add-summary
 Flask-SocketIO==5.4.1
 flask-session==0.8.0
 redis==5.1.1
