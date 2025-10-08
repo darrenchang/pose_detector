@@ -1,0 +1,13 @@
+services:
+  web:
+    restart: always
+    image: pose-web
+    networks:
+      - pose-net
+    ports:
+      - 8080:8080
+
+networks:
+  pose-net:
+    driver: bridge
+    name: post-net
