@@ -46,14 +46,17 @@ class Login(Resource):
 @ns_model.response(200, "Get landmarks", model_landmarks)
 @ns_model.route("/get_landmarks")
 class GetLandmarks(Resource):
+    @ns_model.doc(
+        summary="⚡ SocketIO supported",
+        description=(
+            "##SocketIO\n"
+            "**Messages:**\n"
+            "- `subscribe` to pose landmark updates. Data: `{\"cam_id\": \"host_cam\"}`\n"
+            "- `unsubscribe` to pose landmark updates. Data: `{\"cam_id\": \"host_cam\"}`\n"
+            "- `landmarks` - listen. Data: `#definitions/LandmarksLandmarks`\n"
+        ),
+    )
     def get(self):
-        """
-        ⚡ SocketIO supported
-        SocketIO events:
-        - `subscribe` to pose landmark updates. Data: `{"cam_id": "host_cam"}`
-        - `unsubscribe` to pose landmark updates. Data: `{"cam_id": "host_cam"}`
-        - `landmarks` - listen. Data: `#definitions/LandmarksLandmarks`
-        """
         cam_id = request.args.get("cam_id")
         landmarks = SocketIoClient(
             port=self.api.app.config.get("PORT"),
@@ -75,10 +78,8 @@ class GetLandmarks(Resource):
 @ns_model.response(400, "Invalid request", model_detail)
 @ns_model.route("/save_landmarks")
 class SaveLandmarks(Resource):
+    @ns_model.doc(summary="Save the landmarks to storage")
     def post(self):
-        """
-        Save the landmarks to storage
-        """
         landmark_name = request.form.get("landmark_name", {})
         landmarks = request.form.get("landmarks", {})
         try:
