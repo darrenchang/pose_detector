@@ -25,14 +25,13 @@ if [ ! -d app/venv ]; then
   echo "Setting up python venv..."
   python3.12 -m venv app/venv;
   source app/venv/bin/activate;
-  python -m pip install app/src/.;
+  python -m pip install app/.;
 fi
 
 source app/venv/bin/activate;
-
 (
 echo "Starting the server..."
-cd app/src;
+cd app;
 VIDEO_SOURCE=${VIDEO_SOURCE} \
 python launcher.py;
 )

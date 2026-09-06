@@ -1,6 +1,6 @@
-opencv-python==4.10.0.84
-opencv-contrib-python==4.10.0.84
-mediapipe==0.10.21
+opencv-python>=4.10.0.84
+opencv-contrib-python>=4.10.0.84
+mediapipe>=0.10.18
 gunicorn==23.0.0
 rpyc==6.0.2
 flask==3.1.2
