@@ -4,6 +4,7 @@
       <div>
         <n-tabs type="line" @update:value="handleUpdate" default-value="" v-model:value="currentRouteName" size="large">
           <n-tab name="pose" tab="Pose"></n-tab>
+          <n-tab name="runnergame" tab="Runner Game"></n-tab>
           <n-tab name="pdf" tab="PDF"></n-tab>
           <n-tab name="swaggerui" tab="SwaggerUI"></n-tab>
         </n-tabs>

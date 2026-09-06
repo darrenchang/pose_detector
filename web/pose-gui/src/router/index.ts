@@ -9,6 +9,11 @@ const router = createRouter({
       component: () => import('@/views/PoseView.vue'),
     },
     {
+      path: '/runner-game',
+      name: 'runnergame',
+      component: () => import('@/views/RunnerGameView.vue'),
+    },
+    {
       path: '/pdf',
       name: 'pdf',
       component: () => import('@/views/PdfView.vue') ,
