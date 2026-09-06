@@ -76,6 +76,21 @@ let lastLeftHand = false
 let lastRightHand = false
 let firstFrame = true
 
+// Body/hand sizing. Everything is sized off the torso length (shoulder-centre to
+// hip-centre), which — unlike the shoulder width or the forearm — does not
+// foreshorten when the subject turns, so it is a stable size proxy. It is eased
+// over time (`bodyScale`) so sizes never jump. Hands convert their metric
+// landmarks with a fixed nominal span (not the live finger span) so a curled
+// fist can't blow the hand up.
+const NOMINAL_HAND_SPAN = 0.18 // typical metric wrist -> middle-fingertip span
+const HAND_TO_TORSO = 0.33 // rendered (open) hand length as a fraction of torso length
+const HEAD_TO_TORSO = 0.26 // head radius as a fraction of torso length
+const BODY_SCALE_RATE = 4 // per-second smoothing rate for the body size
+const BODY_SCALE_MAX_VEL = 0.5 // max change in body size per second (hard cap on pops)
+const TORSO_MIN = 0.15
+const TORSO_MAX = 0.9
+let bodyScale = 0 // smoothed torso length (canvas units), the body size proxy
+
 function p2c(coord: number) {
   return 1 - coord * canvas_factor
 }
@@ -132,29 +147,23 @@ function setBone(bone: any, a: Vec3, b: Vec3) {
   bone.scale.set(1, len, 1)
 }
 
-function dist3(a: number[], b: number[]) {
-  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2)
-}
-
 // Animate one hand's 21 joints and its finger bones. The hand landmarks are in
-// metric world space, so they are scaled to the pose forearm length (keeping
-// them proportional to the body) and the hand's own wrist is anchored onto the
-// pose wrist so the fingers extend from where the arm actually ends.
+// metric world space; `scale` (computed once per frame from the stable shoulder
+// width, then temporally smoothed) converts them to body-proportional canvas
+// units. The hand's own wrist is anchored onto the pose wrist so the fingers
+// extend from where the arm actually ends.
 function updateHand(
   jointsGroupRef: any,
   bonesGroupRef: any,
   handLandmarks: Record<string, { position: number[] }>,
   cache: Record<string, Vec3>,
   anchor: Vec3,
-  forearmLen: number,
+  scale: number,
   handPresent: boolean,
   delta: number,
 ): boolean {
   let moved = false
   const handWrist = handLandmarks['wrist'].position
-  // Scale so the hand (wrist -> middle fingertip) is ~0.85x the forearm.
-  const handSpan = dist3(handWrist, handLandmarks['middleFingerTip'].position)
-  const scale = handSpan > 1e-4 ? (0.85 * forearmLen) / handSpan : 1
   const joints: any[] = jointsGroupRef.value.children
   joints.forEach(item => {
     const lm = handLandmarks[item.name].position
@@ -231,18 +240,51 @@ onBeforeRender(({ delta }) => {
   if (moveToward(headRef.value, headTarget.x, headTarget.y, headTarget.z, delta)) {
     dirty = true
   }
-  const shoulderWidth = Math.sqrt(
-    (bodyPos['leftShoulder'].x - bodyPos['rightShoulder'].x) ** 2 +
-    (bodyPos['leftShoulder'].y - bodyPos['rightShoulder'].y) ** 2 +
-    (bodyPos['leftShoulder'].z - bodyPos['rightShoulder'].z) ** 2,
+  headRef.value.visible = present
+
+  // Body size: smoothed torso length (shoulder-centre -> hip-centre). Used to
+  // size both the head and the hands so they stay proportional and stable.
+  const shoulderMid: Vec3 = {
+    x: (bodyPos['leftShoulder'].x + bodyPos['rightShoulder'].x) / 2,
+    y: (bodyPos['leftShoulder'].y + bodyPos['rightShoulder'].y) / 2,
+    z: (bodyPos['leftShoulder'].z + bodyPos['rightShoulder'].z) / 2,
+  }
+  const hipMid: Vec3 = {
+    x: (bodyPos['leftHip'].x + bodyPos['rightHip'].x) / 2,
+    y: (bodyPos['leftHip'].y + bodyPos['rightHip'].y) / 2,
+    z: (bodyPos['leftHip'].z + bodyPos['rightHip'].z) / 2,
+  }
+  const torso = Math.min(
+    Math.max(
+      Math.sqrt(
+        (shoulderMid.x - hipMid.x) ** 2 +
+        (shoulderMid.y - hipMid.y) ** 2 +
+        (shoulderMid.z - hipMid.z) ** 2,
+      ),
+      TORSO_MIN,
+    ),
+    TORSO_MAX,
   )
-  const headRadius = Math.min(Math.max(0.45 * shoulderWidth, 0.06), 0.2)
+  if (bodyScale === 0) {
+    bodyScale = torso // snap on first sizing to avoid a grow-in
+  } else {
+    const eased = bodyScale + (torso - bodyScale) * (1 - Math.exp(-BODY_SCALE_RATE * delta))
+    // Also cap the absolute per-frame change so a single bad torso reading (or a
+    // dropped frame) can never pop the hand/head size.
+    const maxStep = BODY_SCALE_MAX_VEL * delta
+    bodyScale = Math.max(bodyScale - maxStep, Math.min(bodyScale + maxStep, eased))
+  }
+
+  // Head radius follows the smoothed body size.
+  const headRadius = HEAD_TO_TORSO * bodyScale
   const curRadius = headRef.value.scale.x
   if (Math.abs(headRadius - curRadius) > SETTLED_EPS) {
-    headRef.value.scale.setScalar(smoothing(curRadius, headRadius, delta))
+    headRef.value.scale.setScalar(headRadius)
     dirty = true
   }
-  headRef.value.visible = present
+
+  // Metric-hand -> canvas scale, from the same smoothed body size.
+  const handScale = (HAND_TO_TORSO * bodyScale) / NOMINAL_HAND_SPAN
 
   // 3. Body bones
   const bodyBones: any[] = bodyBonesGroupRef.value.children
@@ -257,29 +299,22 @@ onBeforeRender(({ delta }) => {
 
   // 4. Neck: head -> shoulder mid-point
   if (present) {
-    const shoulderMid: Vec3 = {
-      x: (bodyPos['leftShoulder'].x + bodyPos['rightShoulder'].x) / 2,
-      y: (bodyPos['leftShoulder'].y + bodyPos['rightShoulder'].y) / 2,
-      z: (bodyPos['leftShoulder'].z + bodyPos['rightShoulder'].z) / 2,
-    }
     setBone(neckBoneRef.value, headRef.value.position, shoulderMid)
   } else {
     neckBoneRef.value.visible = false
   }
 
-  // 5. Hands: full finger skeletons anchored at each pose wrist, scaled to the
-  // matching forearm so they stay proportional to the body.
+  // 5. Hands: full finger skeletons anchored at each pose wrist, scaled by the
+  // shared smoothed hand scale so they stay body-proportional and stable.
   const lw = poseLandmarks['leftWrist'].position
   const leftAnchor: Vec3 = { x: lw[0], y: lw[1], z: lw[2] }
-  const leftForearm = dist3(poseLandmarks['leftElbow'].position, lw)
-  if (updateHand(leftHandJointsGroupRef, leftHandBonesGroupRef, leftHandLandmarks, leftHandPos, leftAnchor, leftForearm, leftHandPresent, delta)) {
+  if (updateHand(leftHandJointsGroupRef, leftHandBonesGroupRef, leftHandLandmarks, leftHandPos, leftAnchor, handScale, leftHandPresent, delta)) {
     dirty = true
   }
 
   const rw = poseLandmarks['rightWrist'].position
   const rightAnchor: Vec3 = { x: rw[0], y: rw[1], z: rw[2] }
-  const rightForearm = dist3(poseLandmarks['rightElbow'].position, rw)
-  if (updateHand(rightHandJointsGroupRef, rightHandBonesGroupRef, rightHandLandmarks, rightHandPos, rightAnchor, rightForearm, rightHandPresent, delta)) {
+  if (updateHand(rightHandJointsGroupRef, rightHandBonesGroupRef, rightHandLandmarks, rightHandPos, rightAnchor, handScale, rightHandPresent, delta)) {
     dirty = true
   }
 
