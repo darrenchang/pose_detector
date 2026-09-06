@@ -86,27 +86,10 @@
       </div>
     </div>
     <div class="overlay absolute w-full h-full z-255">
-      <TresCanvas render-mode="manual">
-        <TresPerspectiveCamera :position="[0, 0, 6]" :fov="30" :look-at="[0, 0, 0]"/>
-        <TresGroup ref="poseLandmarksGroupRef" :position="[0, 0, 0]" :visible="false">
-          <TresMesh v-for="(landmark, key) in poseLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
-            <TresBoxGeometry :args="landmark.cubeSize"/>
-            <TresMeshNormalMaterial :color="landmark.cubeColor"/>
-          </TresMesh>
-        </TresGroup>
-        <TresGroup ref="leftHandLandmarksGroupRef" :position="[0, 0, 0]">
-          <TresMesh v-for="(landmark, key) in leftHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
-            <TresBoxGeometry :args="landmark.cubeSize"/>
-            <TresMeshNormalMaterial :color="landmark.cubeColor"/>
-          </TresMesh>
-        </TresGroup>
-        <TresGroup ref="rightHandLandmarksGroupRef" :position="[0, 0, 0]">
-          <TresMesh v-for="(landmark, key) in rightHandLandmarks" :name="key" :key="key" :position="[-1, -1, -1]">
-            <TresBoxGeometry :args="landmark.cubeSize"/>
-            <TresMeshNormalMaterial :color="landmark.cubeColor"/>
-          </TresMesh>
-        </TresGroup>
-        <TresAmbientLight :intensity="1"/>
+      <!-- render-mode="on-demand": PdfScene only invalidates while landmarks
+           are still moving, so a still or absent subject draws no frames. -->
+      <TresCanvas render-mode="on-demand">
+        <PdfScene/>
       </TresCanvas>
     </div>
     <n-layout-content>
@@ -129,9 +112,9 @@ import { NLayoutContent, NProgress, NButton, NSlider, NIcon, NTag } from 'naive-
 import type { Ref, ComputedRef } from 'vue';
 import { computed, onMounted, ref, shallowRef, watch, watchEffect } from 'vue';
 import { pdfjsLib, pdfWorkerLib, SimpleLinkService } from '@/composables/pdfjsLib';
-import { poseLandmarks } from '@/interface/poseLandmarksInterface';
-import { leftHandLandmarks, rightHandLandmarks, handGestures } from '@/interface/handLandmarksInterface';
+import { handGestures } from '@/interface/handLandmarksInterface';
 import { TresCanvas, useRenderLoop } from '@tresjs/core';
+import PdfScene from '@/components/PdfScene.vue';
 import { ArrowBackIosNewFilled, ArrowForwardIosOutlined } from '@vicons/material';
 import { AddOutline, RemoveOutline, HandRightOutline } from '@vicons/ionicons5';
 import { CursorText } from '@vicons/tabler';
@@ -359,34 +342,9 @@ const processLoadingTask = (source: string): void => {
     });
 };
 
-const canvas_factor = 2;
 const paused = ref(false);
 const pauseView = () => {
   paused.value = !paused.value;
-};
-
-const poseToCanvasCoord = (coord: number, factor: number) => {
-  // Convert landmarks from pose models coord to views canvas coord
-  return 1 - coord * factor;
-};
-
-const canvasToPoseCoord = (coord: number, factor: number) => {
-  // Convert landmarks from views canvas coord to models coord cord
-  return (coord - 1) * -1 / factor;
-};
-
-const getCenter = (points: number[][]): { "x": number, "y": number, "z": number } => {
-  const pointSum = points.reduce((acc, cur) => {
-    acc["x_sum"] += cur[0];
-    acc["y_sum"] += cur[1];
-    acc["z_sum"] += cur[2];
-    return acc;
-  }, { "x_sum": 0, "y_sum": 0, "z_sum": 0 });
-  return {
-    x: pointSum["x_sum"] / points.length,
-    y: pointSum["y_sum"] / points.length,
-    z: pointSum["z_sum"] / points.length,
-  };
 };
 
 const scrollPdf = (x, y) => {
@@ -394,36 +352,6 @@ const scrollPdf = (x, y) => {
   scrollContainer.value.scrollBy({
     left: 100,
     behavior: 'smooth'
-  });
-};
-
-const smoothing = (start: number, end: number, delta: number, speed_override = -1) => {
-  let speed = 10;
-  if(speed_override === -1) {
-    speed = Math.min(Math.max(end - start * 2, 7), 10);
-  } else {
-    speed = speed_override;
-  }
-  const alpha = 1 - Math.exp(-speed * delta);
-  const threshold = 0.3;
-  if(Math.abs(end - start) > threshold) {
-    return end;
-  } else {
-    return start + (end - start) * alpha;
-  }
-};
-
-const updateLandmarks = (groupRef, landmarks, delta, smooth_speed = -1, offsetPosition = { x: 0, y: 0, z: 0 }) => {
-  groupRef.value.children.forEach((item) => {
-    const landmark = landmarks[item.name].position;
-    const newX = poseToCanvasCoord(offsetPosition.x + landmark[0], canvas_factor);
-    const newY = poseToCanvasCoord(offsetPosition.y + landmark[1], canvas_factor);
-    const newZ = poseToCanvasCoord(offsetPosition.z + landmark[2], canvas_factor);
-    item.position.x = smoothing(item.position.x, newX, delta, smooth_speed);
-    item.position.y = smoothing(item.position.y, newY, delta, smooth_speed);
-    item.position.z = smoothing(item.position.z, newZ, delta, smooth_speed);
-    const displayConditions = [landmarks[item.name].exist, landmarks[item.name].display];
-    item.visible = displayConditions.every(item => item === true);
   });
 };
 
@@ -473,44 +401,11 @@ const zoomDwellCheck = (action: string, _dwellTimer, delta: number) => {
   }
 };
 
-const poseLandmarksGroupRef = shallowRef();
-const leftHandLandmarksGroupRef = shallowRef();
-const rightHandLandmarksGroupRef = shallowRef();
-
-onLoop(({ delta, elapsed }) => {
+// The gesture/dwell logic runs on the global render loop every frame (it must
+// keep accumulating time regardless of what the 3D canvas draws). The 3D
+// landmark rendering lives in PdfScene, which draws on-demand.
+onLoop(({ delta }) => {
   if(paused.value) return;
-  if(!poseLandmarksGroupRef.value || !leftHandLandmarksGroupRef.value || !rightHandLandmarksGroupRef.value) return;
-
-  updateLandmarks(poseLandmarksGroupRef, poseLandmarks, delta, -1);
-
-  const leftWrist = poseLandmarksGroupRef.value.children.reduce((acc, cur) => {
-    if(cur.name === "leftWrist") {
-      acc = cur;
-      return acc;
-    }
-    return acc;
-  }, undefined);
-  const leftPalmOffset = {
-    "x": canvasToPoseCoord(leftWrist.position.x, canvas_factor),
-    "y": canvasToPoseCoord(leftWrist.position.y, canvas_factor),
-    "z": canvasToPoseCoord(leftWrist.position.z, canvas_factor),
-  };
-  updateLandmarks(leftHandLandmarksGroupRef, leftHandLandmarks, delta, 50, leftPalmOffset);
-
-  const rightWrist = poseLandmarksGroupRef.value.children.reduce((acc, cur) => {
-    if(cur.name === "rightWrist") {
-      acc = cur;
-      return acc;
-    }
-    return acc;
-  }, undefined);
-  const rightPalmOffset = {
-    "x": canvasToPoseCoord(rightWrist.position.x, canvas_factor),
-    "y": canvasToPoseCoord(rightWrist.position.y, canvas_factor),
-    "z": canvasToPoseCoord(rightWrist.position.z, canvas_factor),
-  };
-  updateLandmarks(rightHandLandmarksGroupRef, rightHandLandmarks, delta, 50, rightPalmOffset);
-  // Check dwell activation
   pageTurnDwellCheck("nextPage", dwellTimer.value.nextPage, delta);
   pageTurnDwellCheck("prevPage", dwellTimer.value.prevPage, delta);
   zoomDwellCheck("zoomIn", dwellTimer.value.zoomIn, delta);
