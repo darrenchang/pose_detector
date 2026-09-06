@@ -27,6 +27,17 @@ class PoseApp:
         app.config["PORT"] = port
         app.config.setdefault("RESTX_MASK_SWAGGER", False)
         Session(app)
+
+        # Allow cross-origin requests from the web UI (served on another port)
+        @app.after_request
+        def add_cors_headers(response):
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+            response.headers["Access-Control-Allow-Methods"] = (
+                "GET, POST, PUT, DELETE, OPTIONS"
+            )
+            return response
+
         api_prefix = "/api"
         api = Api(
             app,

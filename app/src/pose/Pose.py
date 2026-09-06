@@ -234,7 +234,9 @@ class RpcService(rpyc.Service):
         self.target_fps = 100
         self.frame_duration = 1.0 / self.target_fps
         self.redis_client = RedisClient(server_sock=redis_server_sock)
-        self.socketio = SocketIO(self.redis_client.get_connection_url()).get_socketio()
+        self.socketio = SocketIO(
+            self.redis_client.get_connection_url(), channel=socketio_channel
+        ).get_socketio()
         model: Model = Model()
         ns_base = Namespace("base", "Namespace for registering models")
         self.model_landmarks = ns_base.model(model.landmarks.name, model.landmarks)
@@ -253,15 +255,33 @@ class RpcService(rpyc.Service):
         cap = cv2.VideoCapture(cam)
 
         if not cap.isOpened():
-            logger.warning("Cannot open camera")
-            exit()
+            logger.error(
+                f"Cannot open camera/video source {cam!r}. "
+                "On macOS, make sure the app you launched this from has camera "
+                "permission (System Settings > Privacy & Security > Camera). "
+                "Shutting down the pose service."
+            )
+            # exit() would only end this thread; kill the process so the
+            # launcher watchdog can take the whole service down
+            os._exit(1)
+        consecutive_failures = 0
+        max_consecutive_failures = 100
         while True:
             s = perf_counter()
             ret, img = cap.read()
             if not ret:
+                consecutive_failures += 1
+                if consecutive_failures >= max_consecutive_failures:
+                    logger.error(
+                        f"Cannot receive frame from source {cam!r} after "
+                        f"{max_consecutive_failures} consecutive attempts. "
+                        "Shutting down the pose service."
+                    )
+                    os._exit(1)
                 logger.warning("Cannot receive frame")
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
+            consecutive_failures = 0
             img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             landmarks = self.pose.inference(img2)
             hand, gestures = self.hand.inference(img2)
@@ -303,7 +323,7 @@ class PoseService:
     ) -> None:
         self.socket_path = socket_path
         self.redis_server_sock = redis_server_sock
-        self.socketio_channel = socket_path
+        self.socketio_channel = socketio_channel
         self.cam = cam
         self.__start_service()
         self.server = None

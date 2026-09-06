@@ -2,6 +2,7 @@ import atexit
 import os
 import secrets
 import sys
+import time
 from multiprocessing import Process
 from multiprocessing.util import _exit_function
 
@@ -109,12 +110,12 @@ if __name__ == "__main__":
         "socket_path": pose_service_sock,
         "socketio_channel": "general",
     }
-    p = Process(
+    pose_service_proc = Process(
         target=PoseService,
         kwargs=pose_service_options,
         daemon=True,
     )
-    p.start()
+    pose_service_proc.start()
 
     flask_secret = secrets.token_hex(24)
     # Gunicorn setting
@@ -163,5 +164,35 @@ if __name__ == "__main__":
         p.start()
         processes.append(p)
 
-    for p in processes:
-        p.join()
+    # Watchdog: if the pose service dies (e.g. camera failed to open) or the
+    # web server dies (e.g. port already in use), take everything down
+    # instead of leaving orphaned processes behind
+    exit_code = 0
+    try:
+        while any(p.is_alive() for p in processes):
+            if not pose_service_proc.is_alive():
+                logger.error(
+                    "Pose service exited "
+                    f"(exit code {pose_service_proc.exitcode}). "
+                    "Shutting down..."
+                )
+                exit_code = 1
+                break
+            time.sleep(1)
+        else:
+            web_exit_codes = [p.exitcode for p in processes]
+            if any(code != 0 for code in web_exit_codes):
+                logger.error(
+                    f"Web server exited (exit codes {web_exit_codes}). "
+                    "Is port 8000 already in use by another instance?"
+                )
+                exit_code = 1
+    except KeyboardInterrupt:
+        pass
+    finally:
+        for p in processes:
+            p.terminate()
+        for p in processes:
+            p.join(5)
+        redis_server.shutdown()
+    sys.exit(exit_code)
