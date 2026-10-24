@@ -83,7 +83,7 @@ let firstFrame = true
 // landmarks with a fixed nominal span (not the live finger span) so a curled
 // fist can't blow the hand up.
 const NOMINAL_HAND_SPAN = 0.18 // typical metric wrist -> middle-fingertip span
-const HAND_TO_TORSO = 0.33 // rendered (open) hand length as a fraction of torso length
+const HAND_TO_TORSO = 0.25 // rendered (open) hand length as a fraction of torso length
 const HEAD_TO_TORSO = 0.26 // head radius as a fraction of torso length
 const BODY_SCALE_RATE = 4 // per-second smoothing rate for the body size
 const BODY_SCALE_MAX_VEL = 0.5 // max change in body size per second (hard cap on pops)
