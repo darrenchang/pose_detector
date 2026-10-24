@@ -41,10 +41,10 @@ class Param:
         )
         parser.add_argument(
             "landmarks",
-            default="[1,2,3]",
+            default='{"pose_landmarks": [], "hand_landmarks": {}, "hand_gestures": {}}',
             location="form",
-            help="Landmark coordinates",
-            type=object,
+            help="A JSON-encoded `Landmarks` object (same shape as `get_landmarks` returns)",
+            type=str,
             required=True,
         )
         return parser
