@@ -75,8 +75,11 @@ class Pose:
             output_segmentation_masks=True,
         )
         self.recognizer = vision.PoseLandmarker.create_from_options(self.options)
+        # Latest inference result (list of 33 landmark dicts, or [] if nobody is in frame)
+        self.landmarks = []
 
     def inference(self, im):
+        """Run pose detection on a frame, store the result on self.landmarks and return it."""
         cv_img_rgb = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv_img_rgb)
         results = self.recognizer.detect(mp_image)
@@ -93,6 +96,7 @@ class Pose:
                         "visibility": landmark.visibility,
                     }
                 )
+        self.landmarks = landmarks
         return landmarks
 
     def download_model(self, output_path: str, landmarker_model_bundle: str):
@@ -170,8 +174,13 @@ class Hand:
         )
         # self.options = vision.GestureRecognizerOptions(base_options=self.base_options, num_hands=2)
         self.recognizer = vision.GestureRecognizer.create_from_options(self.options)
+        # Latest inference results, keyed by "left"/"right"
+        self.landmarks = {"left": [], "right": []}
+        self.gestures = {"left": "", "right": ""}
 
     def inference(self, im):
+        """Run hand detection on a frame, store the results on self.landmarks /
+        self.gestures and return them."""
         image = mp.Image(image_format=mp.ImageFormat.SRGB, data=im)
         results = self.recognizer.recognize(image)
         landmarks = {
@@ -198,6 +207,8 @@ class Hand:
                         "visibility": landmark.visibility,
                     }
                 )
+        self.landmarks = landmarks
+        self.gestures = gestures
         return landmarks, gestures
 
     @staticmethod
@@ -283,15 +294,15 @@ class RpcService(rpyc.Service):
                 continue
             consecutive_failures = 0
             img2 = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            landmarks = self.pose.inference(img2)
-            hand, gestures = self.hand.inference(img2)
+            self.pose.inference(img2)
+            self.hand.inference(img2)
             self.socketio.emit(
                 "landmarks",
                 marshal(
                     {
-                        "pose_landmarks": landmarks,
-                        "hand_landmarks": hand,
-                        "hand_gestures": gestures,
+                        "pose_landmarks": self.pose.landmarks,
+                        "hand_landmarks": self.hand.landmarks,
+                        "hand_gestures": self.hand.gestures,
                     },
                     self.model_landmarks,
                 ),
