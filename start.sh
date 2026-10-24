@@ -2,7 +2,13 @@
 
 set -e
 
-VIDEO_SOURCE=0
+# Create .env from the sample if it doesn't exist
+if [ ! -f .env ]; then
+  echo "No .env found, copying .env.sample to .env..."
+  cp .env.sample .env
+fi
+
+source .env
 
 # Parse named arguments
 while [[ "$#" -gt 0 ]]; do
