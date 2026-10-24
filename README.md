@@ -10,14 +10,12 @@ A pose detection tool for computer vision.
 - Python 3.12
 
 # Getting started
-1. Start the app backend
+1. Start the app (backend on port 8000 and frontend on port 8080)
     ``` bash
     ./start.sh
-    # or
+    # or use a video file instead of the camera
     ./start.sh --video_source videos/tony_skate.mp4
-    ```
-
-2. Start the app frontend
-    ``` bash
-    ./start-web.sh
+    # or start just one half
+    ./start.sh --backend-only
+    ./start.sh --web-only
     ```
