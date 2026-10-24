@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 from threading import Thread
@@ -322,6 +323,19 @@ class RpcService(rpyc.Service):
         while True:
             logger.info(f"FPS: {self.fps:.2f}")
             sleep(interval)
+
+    def exposed_get_landmarks(self) -> str:
+        """RPC: the most recent pose and hand landmarks, as a JSON string.
+
+        Returned as a string (not a dict) so rpyc hands the caller a plain
+        copy instead of a live proxy into this process.
+        """
+        return json.dumps(
+            {
+                "pose_landmarks": self.pose.landmarks,
+                "hand_landmarks": self.hand.landmarks,
+            }
+        )
 
 
 class PoseService:

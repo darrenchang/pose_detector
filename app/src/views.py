@@ -1,10 +1,10 @@
 import json
 import os
-import re
-from datetime import datetime
+import time
 
 from flask import make_response, request
 from flask_restx import Namespace, Resource, marshal
+from rpyc.utils.factory import unix_connect
 
 from Model import Model
 from Param import Param
@@ -79,58 +79,63 @@ class GetLandmarks(Resource):
         )
 
 
-@ns_model.expect(param.save_landmarks)
+def fetch_current_landmarks(pose_service_sock: str) -> dict:
+    """Ask the pose service process for its latest Pose/Hand landmarks."""
+    conn = unix_connect(pose_service_sock, config={"sync_request_timeout": 5})
+    try:
+        return json.loads(conn.root.get_landmarks())
+    finally:
+        conn.close()
+
+
 @ns_model.response(200, "Save landmarks", model_detail)
-@ns_model.response(400, "Invalid request", model_detail)
+@ns_model.response(400, "No pose detected", model_detail)
+@ns_model.response(409, "A snapshot was already saved this second", model_detail)
 @ns_model.response(500, "Failed to write the file", model_detail)
+@ns_model.response(503, "Pose service unavailable", model_detail)
 @ns_model.route("/save_landmarks")
 class SaveLandmarks(Resource):
     @ns_model.doc(
-        summary="Save the landmarks to storage",
+        summary="Save the current landmarks to storage",
         description=(
-            "Saves a `Landmarks` object (the same shape `get_landmarks` returns) "
-            "as `app/src/poses/<pose_name>_<timestamp>.json`."
+            "Snapshots the pose service's current `Pose.landmarks` and "
+            "`Hand.landmarks` and saves them as "
+            "`app/src/poses/<unix timestamp>.json` in the form "
+            "`{\"pose_landmarks\": [...], \"hand_landmarks\": {\"left\": [...], \"right\": [...]}}`."
         ),
     )
     def post(self):
-        args = param.save_landmarks.parse_args()
-        pose_name = args["pose_name"]
-        landmarks = args["landmarks"]
-
-        def bad_request(msg: str):
+        def fail(msg: str, status: int):
             logger.warning(msg)
-            return make_response(marshal({"detail": msg}, model_detail), 400)
-
-        # Only keep filesystem-safe characters so the name can't escape POSES_DIR.
-        safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", pose_name.strip()).strip("_")
-        if not safe_name:
-            return bad_request("Invalid pose_name")
+            return make_response(marshal({"detail": msg}, model_detail), status)
 
         try:
-            landmarks_obj = json.loads(landmarks)
+            data = fetch_current_landmarks(self.api.app.config.get("POSE_SERVICE_SOCK"))
         except Exception as e:
             logger.warning(e)
-            return bad_request("Invalid landmark json format")
-        if not isinstance(landmarks_obj, dict) or not landmarks_obj.get("pose_landmarks"):
-            return bad_request("landmarks must be a Landmarks object with non-empty pose_landmarks")
-
-        # Normalise to the documented Landmarks schema (defaults filled, unknown keys dropped).
-        data = marshal(landmarks_obj, model_landmarks)
+            return fail("Pose service unavailable", 503)
+        if not data.get("pose_landmarks"):
+            return fail("No pose detected, nothing to save", 400)
 
         os.makedirs(POSES_DIR, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        filename = f"{safe_name}_{timestamp}.json"
+        filename = f"{int(time.time())}.json"
         path = os.path.join(POSES_DIR, filename)
         try:
-            with open(path, "w") as f:
+            # O_EXCL: never overwrite a snapshot taken earlier in the same second.
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+        except FileExistsError:
+            return fail(f"poses/{filename} already exists, try again in a second", 409)
+        except OSError as e:
+            logger.error(f"Failed to save landmarks to {path}: {e}")
+            return fail("Failed to save landmarks", 500)
+        try:
+            with os.fdopen(fd, "w") as f:
                 json.dump(data, f, indent=2)
         except OSError as e:
             logger.error(f"Failed to save landmarks to {path}: {e}")
-            return make_response(
-                marshal({"detail": "Failed to save landmarks"}, model_detail), 500
-            )
+            return fail("Failed to save landmarks", 500)
 
-        logger.info(f"Saved landmarks for '{pose_name}' to {path}")
+        logger.info(f"Saved landmarks to {path}")
         return make_response(
             marshal({"detail": f"saved poses/{filename}"}, model_detail),
             200,
