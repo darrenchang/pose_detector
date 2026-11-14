@@ -2,6 +2,15 @@ import { poseLandmarks } from '@/interface/poseLandmarksInterface';
 import { leftHandLandmarks, rightHandLandmarks, handGestures } from '@/interface/handLandmarksInterface';
 import { socket } from '@/socket';
 
+// Consecutive `landmarks` messages in which each detection was missing.
+// Reset to 0 on every message that contains it; starts at Infinity so a view
+// can tell "never detected yet" apart from "briefly lost".
+export const detectionMisses = {
+  pose: Number.POSITIVE_INFINITY,
+  leftHand: Number.POSITIVE_INFINITY,
+  rightHand: Number.POSITIVE_INFINITY,
+}
+
 export function connect() {
   socket.connect()
 }
@@ -15,6 +24,9 @@ export function sub(camId: string) {
 }
 
 socket.on('landmarks', message => {
+  detectionMisses.pose = message.pose_landmarks.length > 0 ? 0 : detectionMisses.pose + 1
+  detectionMisses.leftHand = message.hand_landmarks.left.length > 0 ? 0 : detectionMisses.leftHand + 1
+  detectionMisses.rightHand = message.hand_landmarks.right.length > 0 ? 0 : detectionMisses.rightHand + 1
   // Pose landmarks
   Object.keys(poseLandmarks).forEach((key, index) => {
     if (message.pose_landmarks.length <= 0) {

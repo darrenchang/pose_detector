@@ -3,6 +3,7 @@ import { shallowRef } from 'vue'
 import { useLoop, useTresContext } from '@tresjs/core'
 import { poseLandmarks } from '@/interface/poseLandmarksInterface'
 import { leftHandLandmarks, rightHandLandmarks } from '@/interface/handLandmarksInterface'
+import { detectionMisses } from '@/composables/socketManager'
 
 const canvas_factor = 2
 
@@ -90,6 +91,15 @@ const BODY_SCALE_MAX_VEL = 0.5 // max change in body size per second (hard cap o
 const TORSO_MIN = 0.15
 const TORSO_MAX = 0.9
 let bodyScale = 0 // smoothed torso length (canvas units), the body size proxy
+
+// Detection flickers: a single frame without a result is common even with a
+// subject in view. Keep drawing the last known skeleton until more than this
+// many consecutive frames have gone by with no detection.
+const MAX_MISSED_FRAMES = 10
+
+function held(misses: number) {
+  return misses <= MAX_MISSED_FRAMES
+}
 
 function p2c(coord: number) {
   return 1 - coord * canvas_factor
@@ -203,9 +213,12 @@ onBeforeRender(({ delta }) => {
     return
   }
 
-  const present = poseLandmarks['leftShoulder'].exist
-  const leftHandPresent = present && !!leftHandLandmarks['wrist']?.exist
-  const rightHandPresent = present && !!rightHandLandmarks['wrist']?.exist
+  // "Present" means detected recently enough: either in the latest frame, or
+  // within the last MAX_MISSED_FRAMES frames (the joints then simply keep
+  // their last positions, so a brief dropout doesn't blank the skeleton).
+  const present = poseLandmarks['leftShoulder'].exist || held(detectionMisses.pose)
+  const leftHandPresent = present && (!!leftHandLandmarks['wrist']?.exist || held(detectionMisses.leftHand))
+  const rightHandPresent = present && (!!rightHandLandmarks['wrist']?.exist || held(detectionMisses.rightHand))
   let dirty =
     firstFrame ||
     present !== lastPresent ||
