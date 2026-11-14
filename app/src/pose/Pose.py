@@ -1,5 +1,6 @@
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Thread
 from time import perf_counter, sleep
@@ -254,6 +255,12 @@ class RpcService(rpyc.Service):
         # The camera reads frames on its own thread and keeps the newest one on
         # camera.frame; nothing here ever touches cv2.VideoCapture directly.
         self.camera = Camera(cam)
+        # Pose and hand detection are independent and both release the GIL
+        # inside mediapipe, so they run concurrently on two worker threads;
+        # the slower (pose) model then sets the pace instead of their sum.
+        self._inference_pool = ThreadPoolExecutor(
+            max_workers=2, thread_name_prefix="inference"
+        )
         landmark_runner = Thread(target=self.landmark_runner, daemon=True)
         landmark_runner.start()
         fps_runner = Thread(target=self.display_fps, kwargs={"interval": 5})
@@ -268,8 +275,10 @@ class RpcService(rpyc.Service):
             # No frame captured yet
             return
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        self.pose.inference(rgb)
-        self.hand.inference(rgb)
+        pose_job = self._inference_pool.submit(self.pose.inference, rgb)
+        hand_job = self._inference_pool.submit(self.hand.inference, rgb)
+        pose_job.result()
+        hand_job.result()
 
     def landmark_runner(self):
         """Infer on every new camera frame and publish the landmarks."""
