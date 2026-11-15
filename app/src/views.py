@@ -5,6 +5,7 @@ import time
 from flask import make_response, request
 from flask_restx import Namespace, Resource, marshal
 from rpyc.utils.factory import unix_connect
+from werkzeug.utils import secure_filename
 
 from Model import Model
 from Param import Param
@@ -15,6 +16,9 @@ logger = Logger(__file__).get_logger()
 
 # Saved landmark snapshots go here (app/src/poses/).
 POSES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "poses")
+# Inference results for uploaded images go here (app/src/poses_data/).
+POSES_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "poses_data")
+IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "bmp", "webp"}
 
 # Namespaces
 ns_base = Namespace("base", "Namespace for registering models")
@@ -31,6 +35,8 @@ ns_base.model(model.landmark_hands.name, model.landmark_hands)
 ns_base.model(model.landmark_hand.name, model.landmark_hand)
 ns_base.model(model.gesture_hand.name, model.gesture_hand)
 model_landmarks = ns_base.model(model.landmarks.name, model.landmarks)
+ns_base.model(model.image_info.name, model.image_info)
+model_inference_image = ns_base.model(model.inference_image.name, model.inference_image)
 
 
 @ns_info.response(200, "About the API", model_detail)
@@ -140,3 +146,90 @@ class SaveLandmarks(Resource):
             marshal({"detail": f"saved poses/{filename}"}, model_detail),
             200,
         )
+
+
+def inference_image_bytes(pose_service_sock: str, image_bytes: bytes) -> dict:
+    """Ask the pose service process to run both models on one encoded image."""
+    # A large photo takes a moment to ship over the socket and decode on top
+    # of the inference itself, so allow well over the streaming budget.
+    conn = unix_connect(pose_service_sock, config={"sync_request_timeout": 60})
+    try:
+        return json.loads(conn.root.inference_image(image_bytes))
+    finally:
+        conn.close()
+
+
+@ns_model.expect(param.inference_image)
+@ns_model.response(200, "Inference result", model_inference_image)
+@ns_model.response(400, "No image, unsupported type or undecodable image", model_detail)
+@ns_model.response(500, "Failed to write the result file", model_detail)
+@ns_model.response(503, "Pose service unavailable", model_detail)
+@ns_model.route("/inference_image")
+class InferenceImage(Resource):
+    @ns_model.doc(
+        summary="Run pose and hand detection on one uploaded image",
+        description=(
+            "Upload an image as multipart form field `file`. The pose service "
+            "runs both models on it and the result is stored as "
+            "`app/src/poses_data/<unix ms>_<filename>.json` in the form "
+            "`{\"image\": {...}, \"pose_landmarks\": [...], "
+            "\"hand_landmarks\": {\"left\": [...], \"right\": [...]}, "
+            "\"hand_gestures\": {...}}`. The same document is returned, plus "
+            "`saved_as`. The live camera stream is not affected."
+        ),
+    )
+    def post(self):
+        def fail(msg: str, status: int):
+            logger.warning(msg)
+            return make_response(marshal({"detail": msg}, model_detail), status)
+
+        file = request.files.get("file")
+        if file is None or not file.filename:
+            return fail("No image file provided", 400)
+        filename = secure_filename(file.filename) or "image"
+        ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        if ext not in IMAGE_EXTENSIONS:
+            return fail(
+                f"Unsupported file type '{ext}', expected one of "
+                f"{', '.join(sorted(IMAGE_EXTENSIONS))}",
+                400,
+            )
+        image_bytes = file.read()
+        if not image_bytes:
+            return fail("The uploaded file is empty", 400)
+
+        try:
+            result = inference_image_bytes(
+                self.api.app.config.get("POSE_SERVICE_SOCK"), image_bytes
+            )
+        except Exception as e:
+            logger.warning(e)
+            return fail("Pose service unavailable", 503)
+        if not result.get("width"):
+            return fail(f"Could not decode '{filename}' as an image", 400)
+
+        data = {
+            "image": {
+                "filename": filename,
+                "width": result["width"],
+                "height": result["height"],
+            },
+            "pose_landmarks": result.get("pose_landmarks", []),
+            "hand_landmarks": result.get("hand_landmarks", {"left": [], "right": []}),
+            "hand_gestures": result.get("hand_gestures", {"left": "", "right": ""}),
+        }
+
+        os.makedirs(POSES_DATA_DIR, exist_ok=True)
+        stem = filename.rsplit(".", 1)[0]
+        out_name = f"{int(time.time() * 1000)}_{stem}.json"
+        path = os.path.join(POSES_DATA_DIR, out_name)
+        try:
+            with open(path, "w") as f:
+                json.dump(data, f, indent=2)
+        except OSError as e:
+            logger.error(f"Failed to save inference result to {path}: {e}")
+            return fail("Failed to save the inference result", 500)
+        logger.info(f"Saved inference result for {filename} to {path}")
+
+        data["saved_as"] = f"poses_data/{out_name}"
+        return make_response(marshal(data, model_inference_image), 200)

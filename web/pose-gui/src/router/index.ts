@@ -14,6 +14,11 @@ const router = createRouter({
       component: () => import('@/views/RunnerGameView.vue'),
     },
     {
+      path: '/image-inference',
+      name: 'imageinference',
+      component: () => import('@/views/ImageInferenceView.vue'),
+    },
+    {
       path: '/pdf',
       name: 'pdf',
       component: () => import('@/views/PdfView.vue') ,

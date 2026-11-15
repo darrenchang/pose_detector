@@ -8,6 +8,8 @@ app/src/flask_session
 app/src/videos/*.mp4
 app/src/poses_img/*
 !app/src/poses_img/.gitkeep
+app/src/poses_data/*
+!app/src/poses_data/.gitkeep
 app/src/pose/gesture_recognizer.task
 app/src/pose/pose_landmarker_lite.task
 app/src/pose/pose_landmarker_full.task

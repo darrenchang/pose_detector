@@ -5,6 +5,7 @@
         <n-tabs type="line" @update:value="handleUpdate" default-value="" v-model:value="currentRouteName" size="large">
           <n-tab name="pose" tab="Pose"></n-tab>
           <n-tab name="runnergame" tab="Runner Game"></n-tab>
+          <n-tab name="imageinference" tab="Image Inference"></n-tab>
           <n-tab name="pdf" tab="PDF"></n-tab>
           <n-tab name="swaggerui" tab="SwaggerUI"></n-tab>
         </n-tabs>
@@ -31,7 +32,7 @@ const route = useRoute();
 const router = useRouter();
 let currentRouteName = ref('');
 
-const TAB_ORDER = ['pose', 'runnergame', 'pdf', 'swaggerui'];
+const TAB_ORDER = ['pose', 'runnergame', 'imageinference', 'pdf', 'swaggerui'];
 const slideDirection = ref<'left' | 'right'>('left');
 
 function handleUpdate(key: string) {

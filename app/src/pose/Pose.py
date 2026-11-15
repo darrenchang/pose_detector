@@ -3,11 +3,12 @@ import os
 import signal
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from threading import Event, Thread
+from threading import Event, Lock, Thread
 from time import perf_counter
 
 import cv2
 import mediapipe as mp
+import numpy as np
 import requests
 import rpyc
 from flask_restx import Namespace, marshal
@@ -82,10 +83,14 @@ class Pose:
         # Latest inference result (list of 33 landmark dicts, or [] if nobody is in frame)
         self.landmarks = []
 
-    def inference(self, im):
-        """Run pose detection on a frame, store the result on self.landmarks and return it."""
-        cv_img_rgb = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv_img_rgb)
+    def inference(self, im, store: bool = True):
+        """Run pose detection on an RGB frame and return the landmarks.
+
+        With ``store`` (the default) the result also becomes ``self.landmarks``,
+        the live value the camera stream publishes; one-off requests such as a
+        single uploaded image pass ``store=False`` so they never show up there.
+        """
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=im)
         results = self.recognizer.detect(mp_image)
         landmarks = []
         if len(results.pose_landmarks) > 0:
@@ -100,7 +105,8 @@ class Pose:
                         "visibility": landmark.visibility,
                     }
                 )
-        self.landmarks = landmarks
+        if store:
+            self.landmarks = landmarks
         return landmarks
 
     def download_model(self, output_path: str, landmarker_model_bundle: str):
@@ -182,9 +188,12 @@ class Hand:
         self.landmarks = {"left": [], "right": []}
         self.gestures = {"left": "", "right": ""}
 
-    def inference(self, im):
-        """Run hand detection on a frame, store the results on self.landmarks /
-        self.gestures and return them."""
+    def inference(self, im, store: bool = True):
+        """Run hand detection on an RGB frame and return ``(landmarks, gestures)``.
+
+        As with ``Pose.inference``, ``store=False`` keeps a one-off result out
+        of the live ``self.landmarks`` / ``self.gestures``.
+        """
         image = mp.Image(image_format=mp.ImageFormat.SRGB, data=im)
         results = self.recognizer.recognize(image)
         landmarks = {
@@ -211,8 +220,9 @@ class Hand:
                         "visibility": landmark.visibility,
                     }
                 )
-        self.landmarks = landmarks
-        self.gestures = gestures
+        if store:
+            self.landmarks = landmarks
+            self.gestures = gestures
         return landmarks, gestures
 
     @staticmethod
@@ -262,6 +272,10 @@ class RpcService(rpyc.Service):
         self._inference_pool = ThreadPoolExecutor(
             max_workers=2, thread_name_prefix="inference"
         )
+        # The mediapipe recognizers are not safe to call concurrently on the
+        # same instance, so the camera stream and single-image RPC requests
+        # take turns.
+        self._inference_lock = Lock()
         # Set by shutdown(); every background loop here watches it. The
         # threads are daemons so a stuck one can never keep the process alive.
         self._stopping = Event()
@@ -285,11 +299,18 @@ class RpcService(rpyc.Service):
         if frame is None or self._stopping.is_set():
             # No frame captured yet, or we are shutting down
             return
+        self._run_models(frame, store=True)
+
+    def _run_models(self, frame, store: bool):
+        """Run both models on a BGR frame and return
+        ``(pose_landmarks, hand_landmarks, hand_gestures)``."""
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        pose_job = self._inference_pool.submit(self.pose.inference, rgb)
-        hand_job = self._inference_pool.submit(self.hand.inference, rgb)
-        pose_job.result()
-        hand_job.result()
+        with self._inference_lock:
+            pose_job = self._inference_pool.submit(self.pose.inference, rgb, store)
+            hand_job = self._inference_pool.submit(self.hand.inference, rgb, store)
+            pose_landmarks = pose_job.result()
+            hand_landmarks, hand_gestures = hand_job.result()
+        return pose_landmarks, hand_landmarks, hand_gestures
 
     def landmark_runner(self):
         """Infer on every new camera frame and publish the landmarks."""
@@ -335,6 +356,32 @@ class RpcService(rpyc.Service):
         self._inference_pool.shutdown(wait=True)
         self._fps_thread.join(timeout=1)
         logger.info("Pose service stopped")
+
+    def exposed_inference_image(self, image_bytes: bytes) -> str:
+        """RPC: run pose + hand detection on one encoded image (jpg/png/...).
+
+        Returns a JSON string ``{"width", "height", "pose_landmarks",
+        "hand_landmarks", "hand_gestures"}``; ``width``/``height`` are 0 if
+        the bytes could not be decoded as an image. The live camera results
+        are left untouched.
+        """
+        buf = np.frombuffer(bytes(image_bytes), dtype=np.uint8)
+        frame = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+        if frame is None or self._stopping.is_set():
+            return json.dumps({"width": 0, "height": 0})
+        height, width = frame.shape[:2]
+        pose_landmarks, hand_landmarks, hand_gestures = self._run_models(
+            frame, store=False
+        )
+        return json.dumps(
+            {
+                "width": width,
+                "height": height,
+                "pose_landmarks": pose_landmarks,
+                "hand_landmarks": hand_landmarks,
+                "hand_gestures": hand_gestures,
+            }
+        )
 
     def exposed_get_landmarks(self) -> str:
         """RPC: the most recent pose and hand landmarks, as a JSON string.

@@ -68,6 +68,32 @@ class Model:
         )
 
     @functools.cached_property
+    def image_info(self):
+        return SwaggerModel(
+            "ImageInfo",
+            {
+                "filename": fields.String(example="pose.jpg", default=""),
+                "width": fields.Integer(example=1280, default=0),
+                "height": fields.Integer(example=720, default=0),
+            },
+        )
+
+    @functools.cached_property
+    def inference_image(self):
+        return SwaggerModel(
+            "InferenceImage",
+            {
+                "image": fields.Nested(self.image_info),
+                "saved_as": fields.String(
+                    example="poses_data/1700000000000_pose.json", default=""
+                ),
+                "pose_landmarks": fields.List(fields.Nested(self.landmark_pose), default=[]),
+                "hand_landmarks": fields.Nested(self.landmark_hands),
+                "hand_gestures": fields.Nested(self.gesture_hand),
+            },
+        )
+
+    @functools.cached_property
     def landmarks(self):
         return SwaggerModel(
             "Landmarks",
