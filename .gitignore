@@ -6,8 +6,8 @@ app/src/build/
 app/src/pose.egg-info/
 app/src/flask_session
 app/src/videos/*.mp4
-pose/app/src/poses_img/*
-!pose/app/src/poses_img/.gitkeep
+app/src/poses_img/*
+!app/src/poses_img/.gitkeep
 app/src/pose/gesture_recognizer.task
 app/src/pose/pose_landmarker_lite.task
 app/src/pose/pose_landmarker_full.task
