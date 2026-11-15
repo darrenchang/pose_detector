@@ -1,9 +1,10 @@
 import json
 import os
+import signal
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from threading import Thread
-from time import perf_counter, sleep
+from threading import Event, Thread
+from time import perf_counter
 
 import cv2
 import mediapipe as mp
@@ -261,18 +262,28 @@ class RpcService(rpyc.Service):
         self._inference_pool = ThreadPoolExecutor(
             max_workers=2, thread_name_prefix="inference"
         )
-        landmark_runner = Thread(target=self.landmark_runner, daemon=True)
-        landmark_runner.start()
-        fps_runner = Thread(target=self.display_fps, kwargs={"interval": 5})
-        fps_runner.start()
+        # Set by shutdown(); every background loop here watches it. The
+        # threads are daemons so a stuck one can never keep the process alive.
+        self._stopping = Event()
+        self._landmark_thread = Thread(
+            target=self.landmark_runner, name="landmark-runner", daemon=True
+        )
+        self._landmark_thread.start()
+        self._fps_thread = Thread(
+            target=self.display_fps,
+            kwargs={"interval": 5},
+            name="fps-logger",
+            daemon=True,
+        )
+        self._fps_thread.start()
 
     def inference(self, frame=None):
         """Run pose + hand detection on a frame and keep the results on
         self.pose / self.hand. Defaults to the camera's latest frame."""
         if frame is None:
             frame = self.camera.frame
-        if frame is None:
-            # No frame captured yet
+        if frame is None or self._stopping.is_set():
+            # No frame captured yet, or we are shutting down
             return
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         pose_job = self._inference_pool.submit(self.pose.inference, rgb)
@@ -285,6 +296,8 @@ class RpcService(rpyc.Service):
         for frame in self.camera.frames():
             s = perf_counter()
             self.inference(frame)
+            if self._stopping.is_set():
+                break
             self.socketio.emit(
                 "landmarks",
                 marshal(
@@ -301,11 +314,27 @@ class RpcService(rpyc.Service):
             self.fps = 1 / (perf_counter() - s)
 
     def display_fps(self, interval):
-        while True:
+        while not self._stopping.wait(interval):
             logger.info(
                 f"FPS: inference {self.fps:.2f} / camera {self.camera.fps:.2f}"
             )
-            sleep(interval)
+
+    def shutdown(self):
+        """Stop the capture, inference and logging threads in order.
+
+        Releasing the camera ends ``camera.frames()``, which lets the landmark
+        thread finish its current frame and return; only then is the inference
+        pool shut down, so no work is ever submitted to a closed pool.
+        """
+        if self._stopping.is_set():
+            return
+        logger.info("Stopping pose service...")
+        self._stopping.set()
+        self.camera.release()
+        self._landmark_thread.join(timeout=5)
+        self._inference_pool.shutdown(wait=True)
+        self._fps_thread.join(timeout=1)
+        logger.info("Pose service stopped")
 
     def exposed_get_landmarks(self) -> str:
         """RPC: the most recent pose and hand landmarks, as a JSON string.
@@ -333,19 +362,36 @@ class PoseService:
         self.redis_server_sock = redis_server_sock
         self.socketio_channel = socketio_channel
         self.cam = cam
-        self.__start_service()
         self.server = None
+        self.service = None
+        self.__start_service()
 
     def __start_service(self):
         if os.path.exists(self.socket_path):
             os.remove(self.socket_path)
+        self.service = RpcService(
+            redis_server_sock=self.redis_server_sock,
+            cam=self.cam,
+            socketio_channel=self.socketio_channel,
+        )
         self.server = ThreadedServer(
-            RpcService(
-                redis_server_sock=self.redis_server_sock,
-                cam=self.cam,
-                socketio_channel=self.socketio_channel,
-            ),
+            self.service,
             socket_path=self.socket_path,
             logger=logger,
         )
-        self.server.start()
+        # The launcher stops us with SIGTERM; make it unwind the same way
+        # Ctrl+C does (rpyc already turns KeyboardInterrupt into a clean stop)
+        signal.signal(signal.SIGTERM, self.__handle_sigterm)
+        try:
+            # Blocks until Ctrl+C or server.close()
+            self.server.start()
+        finally:
+            self.service.shutdown()
+            if os.path.exists(self.socket_path):
+                os.remove(self.socket_path)
+
+    def __handle_sigterm(self, signum, frame):
+        logger.info("SIGTERM received, stopping pose service...")
+        # Closing the listener makes server.start() return, which runs the
+        # shutdown in __start_service's finally block
+        self.server.close()

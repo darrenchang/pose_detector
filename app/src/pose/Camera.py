@@ -110,14 +110,15 @@ class Camera:
     def wait_for_frame(self, after: int = 0, timeout: float | None = None):
         """Block until a frame newer than ``after`` exists.
 
-        Returns ``(frame_id, frame)``; the frame is ``None`` only if ``timeout``
-        elapsed first. Pass the id you were last given to be handed exactly
+        Returns ``(frame_id, frame)``; the frame is ``None`` if ``timeout``
+        elapsed first or the camera has been released. Pass the id you were last given to be handed exactly
         the next new frame and never the same one twice.
         """
         with self._new_frame:
-            if not self._new_frame.wait_for(
+            arrived = self._new_frame.wait_for(
                 lambda: self.frame_id > after or not self._running, timeout
-            ):
+            )
+            if not arrived or not self._running:
                 return after, None
             return self.frame_id, self.frame
 

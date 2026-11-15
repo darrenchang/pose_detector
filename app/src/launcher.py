@@ -1,9 +1,11 @@
 import atexit
 import os
 import secrets
+import signal
 import sys
 import time
 from multiprocessing import Process
+from threading import Thread
 from multiprocessing.util import _exit_function
 
 from gunicorn.app.base import BaseApplication
@@ -46,10 +48,52 @@ def worker_exit(server, worker):
     server.kill_worker(worker.pid, 3)
 
 
-def on_exit_factory(redis_server):
-    def on_exit(server):
-        logger.info("Shutting down Redis server...")
-        redis_server.shutdown()
+def worker_int_factory(socketio):
+    """Gunicorn ``worker_int`` hook: runs in the worker on SIGINT/SIGQUIT.
+
+    A browser's Socket.IO connection is a websocket request that never
+    finishes on its own. The gthread worker joins its request threads at
+    exit, so one open websocket would keep the worker alive until gunicorn
+    SIGKILLs it ("Worker was sent SIGKILL!"). Closing every client first lets
+    those requests return and the worker exit on its own.
+    """
+
+    def close_clients():
+        try:
+            socketio.server.eio.disconnect()
+        except Exception as e:
+            logger.warning(f"Could not close Socket.IO clients cleanly: {e}")
+
+    def worker_int(worker):
+        # Ctrl+C reaches the worker directly and again via the master's
+        # SIGQUIT; a second signal would abort this hook mid-way if it did the
+        # work itself, so hand it to a daemon thread that nothing interrupts.
+        Thread(target=close_clients, name="socketio-close", daemon=True).start()
+
+    return worker_int
+
+
+def stop_process(proc, name: str, grace: float = 0, timeout: float = 10):
+    """Stop a child process as gently as it will allow.
+
+    ``grace`` is how long to let it finish on its own first (Ctrl+C already
+    reaches every process in the group); then SIGINT, then SIGTERM, and only
+    as a last resort SIGKILL. Returns once it is gone.
+    """
+    proc.join(grace)
+    for sig, label in ((signal.SIGINT, "SIGINT"), (signal.SIGTERM, "SIGTERM")):
+        if not proc.is_alive():
+            return
+        logger.info(f"Stopping {name} ({label})...")
+        try:
+            os.kill(proc.pid, sig)
+        except ProcessLookupError:
+            return
+        proc.join(timeout)
+    if proc.is_alive():
+        logger.warning(f"{name} did not stop within {timeout}s, killing it")
+        proc.kill()
+        proc.join(2)
 
 
 def get_main_app(
@@ -89,7 +133,8 @@ def run_app(
         port,
         flask_secret,
     )
-    pose_app.setup_socketio(channel="general")
+    socketio = pose_app.setup_socketio(channel="general")
+    options = {**options, "worker_int": worker_int_factory(socketio)}
     StandaloneApplication(app, options).run()
 
 
@@ -140,7 +185,6 @@ if __name__ == "__main__":
         "preload": True,
         "post_worker_init": post_worker_init,
         "worker_exit": worker_exit,
-        "on_exit": on_exit_factory(redis_server=redis_server),
     }
 
     # Launch the main WSGI service
@@ -168,6 +212,7 @@ if __name__ == "__main__":
     # web server dies (e.g. port already in use), take everything down
     # instead of leaving orphaned processes behind
     exit_code = 0
+    interrupted = False
     try:
         while any(p.is_alive() for p in processes):
             if not pose_service_proc.is_alive():
@@ -188,11 +233,20 @@ if __name__ == "__main__":
                 )
                 exit_code = 1
     except KeyboardInterrupt:
-        pass
+        interrupted = True
+        logger.info("Interrupted, shutting down...")
     finally:
+        # Producer first, then the web server, then the Redis bus they share.
+        # After Ctrl+C the children are already stopping on their own, so give
+        # them a moment before escalating.
+        grace = 2 if interrupted else 0
+        stop_process(pose_service_proc, "pose service", grace=grace)
         for p in processes:
-            p.terminate()
-        for p in processes:
-            p.join(5)
-        redis_server.shutdown()
+            stop_process(p, "web server", grace=grace)
+        logger.info("Shutting down Redis server...")
+        try:
+            redis_server.shutdown()
+        except Exception as e:
+            logger.warning(f"Redis did not shut down cleanly: {e}")
+        logger.info("Shutdown complete")
     sys.exit(exit_code)

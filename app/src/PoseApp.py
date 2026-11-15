@@ -59,6 +59,6 @@ class PoseApp:
     def setup_socketio(self, channel: str):
         logger.info(f"Setting up SocketIO on {os.getpid()}")
         redis_client = RedisClient(self.app.config.get("REDIS_SERVER_SOCK"))
-        SocketIORoutes(
+        return SocketIORoutes(
             redis_client.get_connection_url(), self.app, channel=channel
         ).get_socketio()
