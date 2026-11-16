@@ -1,15 +1,48 @@
 <script setup lang="ts">
 // A card opened full size: the same TresJS skeleton, but with free orbit
 // (drag), zoom (scroll / pinch) and a reset, so the model can be inspected.
-import { computed, ref, watch } from 'vue'
-import { NModal, NButton, NIcon, NTag, NSpace, NText } from 'naive-ui'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { NModal, NButton, NIcon, NSpace } from 'naive-ui'
 import { TresCanvas } from '@tresjs/core'
-import { RefreshOutline } from '@vicons/ionicons5'
+import { RefreshOutline, ChevronBackOutline, ChevronForwardOutline } from '@vicons/ionicons5'
 import PoseCardScene from '@/components/PoseCardScene.vue'
 import type { InferenceCard } from '@/interface/imageInferenceInterface'
 
-const props = defineProps<{ item: InferenceCard | null }>()
-const emit = defineEmits<{ close: [] }>()
+const props = defineProps<{
+  item: InferenceCard | null
+  // Every card that can be shown, in page order, for previous / next.
+  items: InferenceCard[]
+}>()
+const emit = defineEmits<{ close: []; select: [card: InferenceCard] }>()
+
+// --- Previous / next ------------------------------------------------------------
+const index = computed(() => (props.item ? props.items.findIndex(c => c.id === props.item!.id) : -1))
+const hasPrev = computed(() => index.value > 0)
+const hasNext = computed(() => index.value >= 0 && index.value < props.items.length - 1)
+const title = computed(() =>
+  props.item ? `${props.item.name}  (${index.value + 1} / ${props.items.length})` : '',
+)
+
+function goPrev() {
+  if (hasPrev.value) emit('select', props.items[index.value - 1])
+}
+function goNext() {
+  if (hasNext.value) emit('select', props.items[index.value + 1])
+}
+
+// Arrow keys navigate while the modal is open.
+function onKeyDown(e: KeyboardEvent) {
+  if (props.item === null) return
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault()
+    goPrev()
+  } else if (e.key === 'ArrowRight') {
+    e.preventDefault()
+    goNext()
+  }
+}
+onMounted(() => window.addEventListener('keydown', onKeyDown))
+onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
 
 const result = computed(() => props.item?.result)
 const aspect = computed(() => {
@@ -84,11 +117,6 @@ function onWheel(e: WheelEvent) {
 function clamp(v: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, v))
 }
-
-function gestureLabel(side: 'left' | 'right') {
-  const g = result.value?.hand_gestures[side]
-  return g ? g.replace(/_/g, ' ') : ''
-}
 </script>
 
 <template>
@@ -96,7 +124,7 @@ function gestureLabel(side: 'left' | 'right') {
     :show="item !== null"
     preset="card"
     class="pose-modal"
-    :title="item?.name"
+    :title="title"
     :bordered="false"
     size="small"
     :mask-closable="true"
@@ -125,17 +153,41 @@ function gestureLabel(side: 'left' | 'right') {
         />
       </TresCanvas>
       <div v-else class="pose-modal__message">No pose detected</div>
-      <div class="pose-modal__hint">Drag to rotate · Scroll or pinch to zoom · Double-click to reset</div>
+      <div class="pose-modal__hint">Drag to rotate · Scroll or pinch to zoom · Double-click to reset · ← → previous / next</div>
+
+      <!-- Previous / next. pointerdown is stopped so a click here never starts an orbit drag. -->
+      <n-button
+        class="pose-modal__nav pose-modal__nav--prev"
+        circle
+        secondary
+        size="large"
+        :disabled="!hasPrev"
+        title="Previous (←)"
+        aria-label="Previous"
+        data-cy="pose-modal-prev"
+        @pointerdown.stop
+        @click.stop="goPrev"
+      >
+        <template #icon><n-icon><ChevronBackOutline /></n-icon></template>
+      </n-button>
+      <n-button
+        class="pose-modal__nav pose-modal__nav--next"
+        circle
+        secondary
+        size="large"
+        :disabled="!hasNext"
+        title="Next (→)"
+        aria-label="Next"
+        data-cy="pose-modal-next"
+        @pointerdown.stop
+        @click.stop="goNext"
+      >
+        <template #icon><n-icon><ChevronForwardOutline /></n-icon></template>
+      </n-button>
     </div>
 
     <template #footer>
-      <n-space align="center" justify="space-between">
-        <n-space v-if="result" size="small" align="center">
-          <n-tag size="small" :bordered="false">{{ result.image.width }} × {{ result.image.height }}</n-tag>
-          <n-tag v-if="gestureLabel('left')" size="small" type="info" :bordered="false">L: {{ gestureLabel('left') }}</n-tag>
-          <n-tag v-if="gestureLabel('right')" size="small" type="info" :bordered="false">R: {{ gestureLabel('right') }}</n-tag>
-          <n-text depth="3" class="pose-modal__saved">{{ result.saved_as }}</n-text>
-        </n-space>
+      <n-space justify="end">
         <n-button size="small" data-cy="pose-modal-reset" @click="resetView">
           <template #icon><n-icon><RefreshOutline /></n-icon></template>
           Reset view
@@ -173,6 +225,30 @@ function gestureLabel(side: 'left' | 'right') {
 .pose-modal__message {
   color: rgba(255, 255, 255, 0.6);
 }
+.pose-modal__nav.n-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  /* Naive's secondary button is styled for a light page; lift it off the
+     dark viewer. */
+  --n-color: rgba(255, 255, 255, 0.16);
+  --n-color-hover: rgba(255, 255, 255, 0.3);
+  --n-color-pressed: rgba(255, 255, 255, 0.4);
+  --n-text-color: #fff;
+  --n-text-color-hover: #fff;
+  --n-text-color-pressed: #fff;
+  --n-text-color-focus: #fff;
+}
+.pose-modal__nav.n-button:disabled {
+  opacity: 0.25;
+}
+.pose-modal__nav--prev {
+  left: 12px;
+}
+.pose-modal__nav--next {
+  right: 12px;
+}
 .pose-modal__hint {
   position: absolute;
   left: 0;
@@ -182,8 +258,5 @@ function gestureLabel(side: 'left' | 'right') {
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.55);
   pointer-events: none;
-}
-.pose-modal__saved {
-  font-size: 0.8rem;
 }
 </style>

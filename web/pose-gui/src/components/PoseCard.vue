@@ -1,41 +1,42 @@
 <script setup lang="ts">
 // One dropped image: a spinner while the server works, then the detected
-// skeleton drawn with TresJS (drag sideways to turn it), or the error.
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { NCard, NButton, NIcon, NSpin, NTag, NSpace, NText } from 'naive-ui'
-import { TresCanvas } from '@tresjs/core'
+// skeleton (drag sideways to turn it), or the error. The skeleton itself is
+// drawn by the page's shared PoseCardsRenderer into this card's view area;
+// the card only registers that area and its rotation.
+import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
+import { NCard, NButton, NIcon, NSpin } from 'naive-ui'
 import { TrashOutline } from '@vicons/ionicons5'
-import PoseCardScene from '@/components/PoseCardScene.vue'
+import { cardViewRegistryKey } from '@/composables/cardViewRegistry'
+import { hydrate } from '@/composables/cardStore'
 import type { InferenceCard } from '@/interface/imageInferenceInterface'
 
 const props = defineProps<{ item: InferenceCard }>()
 const emit = defineEmits<{ remove: []; open: [] }>()
 
+const registry = inject(cardViewRegistryKey)
 const result = computed(() => props.item.result)
-const aspect = computed(() => {
-  const img = result.value?.image
-  return img && img.height > 0 ? img.width / img.height : 1
-})
 const hasPose = computed(() => (result.value?.pose_landmarks.length ?? 0) > 0)
+const drawable = computed(() => props.item.status === 'done' && !!result.value && hasPose.value)
 
-// Browsers allow only a handful of live WebGL contexts per page, so a card
-// only holds a canvas while it is scrolled into view.
 const viewport = ref<HTMLElement | null>(null)
-const visible = ref(false)
-let observer: IntersectionObserver | null = null
+
+function register() {
+  if (registry && viewport.value && drawable.value && result.value) {
+    registry.register({ id: props.item.id, el: viewport.value, result: result.value, rotationY: rotationY.value })
+  }
+}
+function unregister() {
+  registry?.unregister(props.item.id)
+}
 
 onMounted(() => {
-  if (typeof IntersectionObserver === 'undefined' || !viewport.value) {
-    visible.value = true
-    return
-  }
-  observer = new IntersectionObserver(
-    entries => { visible.value = entries.some(e => e.isIntersecting) },
-    { rootMargin: '100px' },
-  )
-  observer.observe(viewport.value)
+  // A restored card has no result until it is first shown.
+  hydrate(props.item)
+  register()
 })
-onUnmounted(() => observer?.disconnect())
+onUnmounted(unregister)
+// A pending card becomes drawable once its result arrives.
+watch(drawable, d => (d ? register() : unregister()))
 
 // Drag sideways to rotate the skeleton; a click (no real movement) opens
 // the card in the modal instead.
@@ -58,6 +59,7 @@ function onPointerMove(e: PointerEvent) {
   const dx = e.clientX - dragStartX
   if (Math.abs(dx) > DRAG_THRESHOLD) dragged = true
   rotationY.value = dragStartRotation + dx * 0.01
+  registry?.setRotation(props.item.id, rotationY.value)
 }
 function onPointerUp() {
   dragging = false
@@ -70,12 +72,6 @@ function onCardClick() {
     return
   }
   if (props.item.status === 'done') emit('open')
-}
-
-function gestureLabel(side: 'left' | 'right') {
-  const g = result.value?.hand_gestures[side]
-  if (!g) return ''
-  return g.replace(/_/g, ' ')
 }
 </script>
 
@@ -98,42 +94,24 @@ function gestureLabel(side: 'left' | 'right') {
       </n-button>
     </template>
 
+    <!-- The shared renderer paints the skeleton over this element -->
     <div
       ref="viewport"
       class="pose-card__view"
-      :class="{ 'pose-card__view--interactive': item.status === 'done' && hasPose }"
+      :class="{ 'pose-card__view--interactive': drawable }"
+      data-cy="pose-card-view"
+      :data-drawable="drawable"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="onPointerUp"
       @pointercancel="onPointerUp"
     >
       <template v-if="item.status === 'done' && result">
-        <TresCanvas v-if="visible && hasPose" render-mode="on-demand" clear-color="#101826">
-          <PoseCardScene
-            :pose="result.pose_landmarks"
-            :left-hand="result.hand_landmarks.left"
-            :right-hand="result.hand_landmarks.right"
-            :aspect="aspect"
-            :rotation-y="rotationY"
-          />
-        </TresCanvas>
         <div v-if="!hasPose" class="pose-card__message">No pose detected</div>
       </template>
       <n-spin v-else-if="item.status === 'pending'" size="large" />
       <div v-else class="pose-card__message pose-card__message--error">{{ item.error }}</div>
     </div>
-
-    <template #footer>
-      <n-space size="small" align="center">
-        <template v-if="result">
-          <n-tag size="small" :bordered="false">{{ result.image.width }} × {{ result.image.height }}</n-tag>
-          <n-tag v-if="gestureLabel('left')" size="small" type="info" :bordered="false">L: {{ gestureLabel('left') }}</n-tag>
-          <n-tag v-if="gestureLabel('right')" size="small" type="info" :bordered="false">R: {{ gestureLabel('right') }}</n-tag>
-          <n-text depth="3" class="pose-card__saved" :title="result.saved_as">{{ result.saved_as }}</n-text>
-        </template>
-        <n-text v-else depth="3">{{ item.status === 'pending' ? 'Inferencing…' : 'Failed' }}</n-text>
-      </n-space>
-    </template>
   </n-card>
 </template>
 
@@ -171,9 +149,6 @@ function gestureLabel(side: 'left' | 'right') {
 .pose-card__view--interactive:active {
   cursor: grabbing;
 }
-.pose-card__view :deep(canvas) {
-  display: block;
-}
 .pose-card__message {
   color: rgba(255, 255, 255, 0.6);
   padding: 1rem;
@@ -181,12 +156,5 @@ function gestureLabel(side: 'left' | 'right') {
 }
 .pose-card__message--error {
   color: #ff7a7a;
-}
-.pose-card__saved {
-  font-size: 0.75rem;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 </style>
